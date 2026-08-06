@@ -254,6 +254,7 @@ export default function DashboardPage() {
             balance={monthlyStats.balance}
             totalDebt={totalDebt}
             transactions={transactions}
+            monthlyChartData={monthlyChartData}
             isLoading={isLoading}
           />
 

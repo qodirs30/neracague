@@ -2,9 +2,20 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { TrendingUp, TrendingDown, Wallet, X, CreditCard, Plus, Check, ChevronRight, AlertCircle } from 'lucide-react'
+import { TrendingUp, TrendingDown, Wallet, X, CreditCard, Plus, Check, ChevronRight, AlertCircle, BarChart3 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils-extended'
 import { getAllDebts, addDebt, updateDebt, deleteDebt, addTransaction } from '@/lib/db/indexeddb'
+import {
+  ComposedChart,
+  Line,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts'
 import type { Transaction } from '@/types/transaction'
 import type { Debt } from '@/types/debt'
 
@@ -15,6 +26,7 @@ interface SummaryCardsProps {
   totalDebt: number;
   profileName?: string;
   transactions?: Transaction[];
+  monthlyChartData?: any[];
   isLoading?: boolean;
 }
 
@@ -25,12 +37,14 @@ export function SummaryCards({
   totalDebt: initialTotalDebt,
   profileName = 'Sobat Neracague',
   transactions = [],
+  monthlyChartData = [],
   isLoading,
 }: SummaryCardsProps) {
   // Modal states
   const [showIncomeModal, setShowIncomeModal] = useState(false)
   const [showExpenseModal, setShowExpenseModal] = useState(false)
   const [showDebtsModal, setShowDebtsModal] = useState(false)
+  const [showBalanceModal, setShowBalanceModal] = useState(false)
 
   // Debts management states
   const [debts, setDebts] = useState<Debt[]>([])
@@ -179,26 +193,36 @@ export function SummaryCards({
       {/* 4-Column Summary Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         
-        {/* CARD 1: Sisa Saldo (Non-clickable) */}
-        <Card className="border border-slate-100 shadow-sm bg-white text-slate-850 rounded-3xl overflow-hidden flex flex-col justify-between h-36 select-none relative">
-          <div className="absolute right-0 top-0 w-24 h-24 bg-indigo-50/20 rounded-full blur-2xl pointer-events-none" />
+        {/* CARD 1: Sisa Saldo (Royal Blue - Clickable to open unified Cashflow chart modal) */}
+        <Card 
+          onClick={() => setShowBalanceModal(true)}
+          className="bg-gradient-to-br from-[#3b82f6] via-[#2563eb] to-[#1d4ed8] text-white border-0 shadow-md rounded-3xl overflow-hidden flex flex-col justify-between h-36 cursor-pointer select-none hover:-translate-y-0.5 transition-all duration-300 active:scale-98 relative"
+        >
+          <div className="absolute right-0 top-0 w-24 h-24 bg-white/5 rounded-full blur-2xl pointer-events-none" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-5 px-5.5">
             <div>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Sisa Saldo</p>
-              <h3 className="text-xl font-extrabold text-slate-800 tracking-tight mt-1">
+              <p className="text-[9px] font-bold text-white/80 uppercase tracking-widest">Sisa Saldo</p>
+              <h3 className="text-xl font-extrabold text-white tracking-tight mt-1 filter drop-shadow-sm">
                 {formatCurrency(balance)}
               </h3>
-              <span className="text-[9px] font-bold text-slate-400 mt-1 block">
-                Saldo bersih saat ini
-              </span>
             </div>
-            <div className="bg-indigo-50 p-2.5 rounded-xl border border-indigo-100/30">
-              <Wallet className="w-4 h-4 text-indigo-600" />
+            <div className="bg-white/10 p-2.5 rounded-xl border border-white/10 flex-shrink-0 flex items-center justify-center text-white">
+              <Wallet className="w-4 h-4 text-white" />
             </div>
           </CardHeader>
-          <div className="px-5.5 pb-5 pt-0 mt-auto flex items-center justify-between text-[10px] font-bold text-slate-500">
-            <span>Kas & Bank</span>
-            <span>Tersedia</span>
+          
+          {/* Decorative Translucent Bottom Pill Bars */}
+          <div className="flex items-end gap-1.5 px-5.5 pb-4 mt-auto">
+            <div className="bg-white/20 w-3 h-3 rounded-full" />
+            <div className="bg-white/20 w-3 h-5.5 rounded-full" />
+            <div className="bg-white/20 w-3 h-3.5 rounded-full" />
+            <div className="bg-white/20 w-3 h-7 rounded-full" />
+            <div className="bg-white/20 w-3 h-5 rounded-full" />
+            <div className="bg-white/20 w-3 h-6 rounded-full" />
+            <div className="bg-white/20 w-3 h-5 rounded-full" />
+            <div className="bg-white/20 w-3 h-3.5 rounded-full" />
+            <div className="bg-white/20 w-3 h-7.5 rounded-full" />
+            <div className="bg-white/20 w-3 h-6 rounded-full" />
           </div>
         </Card>
 
@@ -308,6 +332,86 @@ export function SummaryCards({
         </Card>
       </div>
 
+      {/* BALANCE INFOGRAPHICS DIALOG POPUP */}
+      {showBalanceModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="w-full max-w-xl bg-white border border-slate-100 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[460px] animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 flex-shrink-0">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-850 flex items-center gap-1.5">
+                  <BarChart3 className="w-4 h-4 text-[#3E6BEC]" /> Infografis Arus Kas (Cashflow)
+                </h3>
+                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Analisis tren pemasukan, pengeluaran & saldo</p>
+              </div>
+              <button 
+                onClick={() => setShowBalanceModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5 stroke-[2.5]" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-5 flex flex-col justify-between">
+              {/* Short stats summary card */}
+              <div className="grid grid-cols-3 gap-3.5 bg-slate-50 p-4 rounded-2xl border border-slate-100/50 text-center">
+                <div>
+                  <span className="text-[9px] font-bold text-slate-450 text-slate-400 uppercase tracking-wider block">Pemasukan</span>
+                  <span className="text-xs font-black text-emerald-650 text-emerald-600 mt-1 block">{formatCurrency(income)}</span>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-slate-450 text-slate-400 uppercase tracking-wider block">Pengeluaran</span>
+                  <span className="text-xs font-black text-rose-650 text-rose-600 mt-1 block">{formatCurrency(expense)}</span>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-slate-450 text-slate-400 uppercase tracking-wider block">Bersih</span>
+                  <span className="text-xs font-black text-indigo-650 text-[#3E6BEC] mt-1 block">{formatCurrency(balance)}</span>
+                </div>
+              </div>
+
+              {/* Recharts Unified Chart */}
+              <div className="h-[240px] w-full mt-4 bg-slate-50/20 p-2 rounded-2xl border border-slate-100/50">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={monthlyChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="#94a3b8" 
+                      fontSize={10} 
+                      tickLine={false} 
+                      axisLine={false} 
+                    />
+                    <YAxis 
+                      stroke="#94a3b8" 
+                      fontSize={9} 
+                      tickLine={false} 
+                      axisLine={false} 
+                      tickFormatter={(v) => `${(v / 1000).toLocaleString('id-ID')}k`}
+                    />
+                    <RechartsTooltip 
+                      formatter={(v) => formatCurrency(Number(v))}
+                      contentStyle={{
+                        backgroundColor: '#0f172a',
+                        border: 'none',
+                        borderRadius: '16px',
+                        color: '#fff',
+                        fontSize: '11px',
+                        padding: '10px 14px',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)'
+                      }}
+                      itemStyle={{ color: '#fff' }}
+                    />
+                    <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
+                    <Bar dataKey="income" fill="#10b981" radius={[3, 3, 0, 0]} barSize={10} name="Pemasukan" />
+                    <Bar dataKey="expense" fill="#ef4444" radius={[3, 3, 0, 0]} barSize={10} name="Pengeluaran" />
+                    <Line type="monotone" dataKey="cumulative" stroke="#3b82f6" strokeWidth={2.5} dot={{ r: 3 }} name="Saldo Bersih" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* INCOME DETAIL DIALOG POPUP */}
       {showIncomeModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
@@ -396,7 +500,7 @@ export function SummaryCards({
           <div className="w-full max-w-xl bg-white border border-slate-100 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[520px] animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 flex-shrink-0">
               <div>
-                <h3 className="text-sm font-extrabold text-slate-850 text-slate-850 flex items-center gap-1.5">
+                <h3 className="text-sm font-extrabold text-slate-850 flex items-center gap-1.5">
                   <CreditCard className="w-4 h-4 text-[#3E6BEC]" /> Kelola Utang & Cicilan
                 </h3>
                 <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Daftar beban pinjaman & paylater aktif</p>
@@ -422,7 +526,7 @@ export function SummaryCards({
                 </div>
                 <div>
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Beban Bulanan</span>
-                  <span className="text-sm font-black text-indigo-600 mt-1 block">{formatCurrency(totalMonthlyCommitment)}</span>
+                  <span className="text-sm font-black text-indigo-650 text-[#3E6BEC] mt-1 block">{formatCurrency(totalMonthlyCommitment)}</span>
                 </div>
               </div>
 
@@ -544,9 +648,9 @@ export function SummaryCards({
                         </div>
 
                         {/* Action details & Pay Installment button */}
-                        <div className="flex justify-between items-center pt-1 border-t border-slate-50">
+                        <div className="flex justify-between items-center pt-1 border-t border-slate-55 border-slate-100">
                           <span className="text-[10px] font-bold text-slate-500">
-                            Tagihan: <span className="text-indigo-650 font-black">{formatCurrency(d.monthlyInstallment)} / bln</span>
+                            Tagihan: <span className="text-indigo-650 text-[#3E6BEC] font-black">{formatCurrency(d.monthlyInstallment)} / bln</span>
                           </span>
                           
                           {d.remainingAmount > 0 ? (
@@ -570,7 +674,7 @@ export function SummaryCards({
                     )
                   })
                 ) : (
-                  <div className="py-10 text-center text-slate-400 text-xs font-bold flex flex-col items-center justify-center">
+                  <div className="py-10 text-center text-slate-450 text-slate-400 text-xs font-bold flex flex-col items-center justify-center">
                     <span>💵</span>
                     <p className="mt-2">Belum ada cicilan atau utang aktif.</p>
                   </div>
@@ -609,7 +713,7 @@ export function SummaryCards({
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-slate-800 focus:outline-none focus:border-indigo-500"
                     required
                   />
-                  <p className="text-[9px] text-slate-400 font-semibold mt-0.5">Sisa saldo utang pokok saat ini: {formatCurrency(selectedPayDebt.remainingAmount)}</p>
+                  <p className="text-[9px] text-slate-450 text-slate-400 font-semibold mt-0.5">Sisa saldo utang pokok saat ini: {formatCurrency(selectedPayDebt.remainingAmount)}</p>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -620,7 +724,7 @@ export function SummaryCards({
                     onChange={(e) => setRecordAsTransaction(e.target.checked)}
                     className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-200"
                   />
-                  <label htmlFor="recordTx" className="text-[10px] font-bold text-slate-650 text-slate-600 cursor-pointer">
+                  <label htmlFor="recordTx" className="text-[10px] font-bold text-slate-600 cursor-pointer">
                     Catat ke Riwayat Transaksi sebagai Pengeluaran
                   </label>
                 </div>
