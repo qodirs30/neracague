@@ -89,11 +89,11 @@ export function SummaryCards({
                 </linearGradient>
               </defs>
               <path 
-                d="M0,25 Q15,10 30,20 T60,5 T90,22 T100,10 L100,30 L0,30 Z" 
+                d="M0,28 Q15,12 30,20 T65,8 T85,15 T100,28 L100,30 L0,30 Z" 
                 fill="url(#incomeMiniGrad)"
               />
               <path 
-                d="M0,25 Q15,10 30,20 T60,5 T90,22 T100,10" 
+                d="M0,28 Q15,12 30,20 T65,8 T85,15 T100,28" 
                 fill="none" 
                 stroke="#10b981" 
                 strokeWidth={2}
@@ -128,11 +128,11 @@ export function SummaryCards({
                 </linearGradient>
               </defs>
               <path 
-                d="M0,20 Q20,5 40,25 T80,10 T100,22 L100,30 L0,30 Z" 
+                d="M0,28 Q20,10 40,24 T80,14 T100,28 L100,30 L0,30 Z" 
                 fill="url(#expenseMiniGrad)"
               />
               <path 
-                d="M0,20 Q20,5 40,25 T80,10 T100,22" 
+                d="M0,28 Q20,10 40,24 T80,14 T100,28" 
                 fill="none" 
                 stroke="#ef4444" 
                 strokeWidth={2}
