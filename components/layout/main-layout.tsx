@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { BottomNav } from './bottom-nav'
-import { TrendingUp, Plus, MessageCircle, Settings, Search, Bell, X } from 'lucide-react'
+import { TrendingUp, Plus, MessageCircle, Settings, Search, Bell, X, CreditCard } from 'lucide-react'
 import { getAllTransactions } from '@/lib/db/indexeddb'
 import { formatCurrency, formatDate } from '@/lib/utils-extended'
 import type { Transaction } from '@/types/transaction'
@@ -106,6 +106,12 @@ export function MainLayout({ children }: MainLayoutProps) {
       label: 'Catat Transaksi',
       icon: Plus,
       active: pathname === '/add-transaction',
+    },
+    {
+      href: '/debts',
+      label: 'Utang & Cicilan',
+      icon: CreditCard,
+      active: pathname === '/debts',
     },
     {
       href: '/chat',

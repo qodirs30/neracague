@@ -100,7 +100,7 @@ function parseSinglePart(part: string): ClientExtractedTransaction | null {
   const categoryRules: [string[], string][] = [
     [['makan', 'nasi', 'roti', 'ayam', 'ikan', 'warung', 'cafe', 'restoran', 'jajan', 'snack', 'kopi', 'teh', 'mie', 'burger'], 'Makanan'],
     [['bensin', 'motor', 'mobil', 'taksi', 'ojek', 'angkot', 'kereta', 'bus', 'isi bbm'], 'Transportasi'],
-    [['listrik', 'air', 'internet', 'tagihan', 'cicilan', 'pulsa', 'langganan'], 'Tagihan'],
+    [['listrik', 'air', 'internet', 'tagihan', 'cicilan', 'pulsa', 'langganan', 'paylater', 'spaylater', 'gopaylater', 'kredit', 'pinjaman'], 'Tagihan'],
     [['film', 'game', 'hiburan', 'konser', 'tiket', 'liburan', 'main', 'nonton'], 'Hiburan'],
     [['obat', 'dokter', 'rumah sakit', 'kesehatan', 'vitamin', 'apotek'], 'Kesehatan'],
     [['belanja', 'baju', 'sepatu', 'gadget', 'barang', 'tas', 'buku', 'shopping', 'hadiah'], 'Belanja'],

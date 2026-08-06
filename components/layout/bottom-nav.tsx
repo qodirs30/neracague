@@ -31,9 +31,9 @@ export function BottomNav() {
   const isSettingsActive = pathname === '/settings'
 
   return (
-    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[360px] bg-slate-100/90 backdrop-blur-md border border-slate-200/50 rounded-full p-2.5 shadow-xl flex items-center justify-between gap-3 z-50 md:hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
-      {/* Left Inner Tab Bar Capsule */}
-      <div className="flex-1 flex items-center justify-around bg-white/40 border border-slate-200/30 rounded-full px-2 py-1.5 gap-1.5">
+    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[360px] bg-white/30 backdrop-blur-xl border border-white/40 rounded-full p-2 shadow-[0_8px_32px_0_rgba(15,23,42,0.06)] flex items-center justify-between gap-3.5 z-50 md:hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
+      {/* Left Inner Tab Bar Capsule (Liquid glass sub-capsule) */}
+      <div className="flex-1 flex items-center justify-around bg-white/20 border border-white/20 rounded-full px-2 py-1.5 gap-1.5">
         {tabs.map((tab) => {
           const Icon = tab.icon
           return (
@@ -42,28 +42,29 @@ export function BottomNav() {
               href={tab.href}
               className={`flex items-center justify-center gap-1.5 transition-all duration-300 select-none ${
                 tab.active
-                  ? 'bg-[#E5EEFF] text-[#1E56EA] rounded-full px-4 py-2 text-[10px] font-extrabold shadow-sm scale-105'
-                  : 'text-slate-500 hover:text-slate-900 rounded-full px-2.5 py-2 text-[10px] font-bold'
+                  ? 'bg-white/60 text-[#1E56EA] border border-white/50 rounded-full px-3.5 py-1.8 text-[10px] font-extrabold shadow-[0_4px_12px_rgba(30,86,234,0.05)] scale-105'
+                  : 'text-slate-650 text-slate-700 hover:text-slate-900 rounded-full px-2 py-1.5 text-[10px] font-bold'
               }`}
             >
-              <Icon className="w-4 h-4 flex-shrink-0 stroke-[2.5]" />
+              <Icon className="w-3.8 h-3.8 flex-shrink-0 stroke-[2.6]" />
               {tab.active && <span>{tab.label}</span>}
             </Link>
           )
         })}
       </div>
 
-      {/* Right Standalone Circle Settings Button */}
+      {/* Right Standalone Circle Settings Button (Liquid glass circle) */}
       <Link
         href="/settings"
-        className={`w-11 h-11 rounded-full border shadow-md flex items-center justify-center flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-105 ${
+        className={`w-10.5 h-10.5 rounded-full flex items-center justify-center flex-shrink-0 cursor-pointer transition-all duration-300 hover:scale-105 ${
           isSettingsActive
-            ? 'bg-[#E5EEFF] border-slate-200/30 text-[#1E56EA]'
-            : 'bg-white border-slate-200/60 text-slate-600 hover:text-slate-900'
+            ? 'bg-white/60 border border-white/50 text-[#1E56EA] shadow-[0_4px_12px_rgba(30,86,234,0.05)]'
+            : 'bg-white/20 border border-white/20 text-slate-700 hover:text-slate-900 shadow-sm'
         }`}
         title="Pengaturan"
+        style={{ width: '42px', height: '42px' }}
       >
-        <Settings className="w-5 h-5 stroke-[2.2]" />
+        <Settings className="w-4.5 h-4.5 stroke-[2.4]" />
       </Link>
     </nav>
   )

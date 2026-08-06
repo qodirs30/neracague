@@ -36,6 +36,8 @@ const CATEGORY_OPTIONS = [
   'Lainnya',
 ]
 
+type FilterPeriod = 'ALL' | 'TODAY' | 'WEEK' | 'MONTH' | 'YEAR';
+
 export function TransactionList({
   transactions,
   onDelete,
@@ -44,6 +46,9 @@ export function TransactionList({
 }: TransactionListProps) {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   
+  // Date filter period state
+  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('ALL')
+
   // Edit form states
   const [editDesc, setEditDesc] = useState('')
   const [editAmount, setEditAmount] = useState<number>(0)
@@ -71,6 +76,47 @@ export function TransactionList({
     })
     setEditingTransaction(null)
   }
+
+  // Filter transactions based on selected date period
+  const filteredTransactions = transactions.filter((t) => {
+    if (filterPeriod === 'ALL') return true
+
+    const txDate = new Date(t.date)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    if (filterPeriod === 'TODAY') {
+      return txDate.toDateString() === today.toDateString()
+    }
+
+    if (filterPeriod === 'WEEK') {
+      const dayOfWeek = today.getDay()
+      const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) // Start of week (Monday)
+      const startOfWeek = new Date(today.setDate(diff))
+      startOfWeek.setHours(0, 0, 0, 0)
+
+      const endOfWeek = new Date(startOfWeek)
+      endOfWeek.setDate(startOfWeek.getDate() + 6)
+      endOfWeek.setHours(23, 59, 59, 999)
+
+      return txDate >= startOfWeek && txDate <= endOfWeek
+    }
+
+    if (filterPeriod === 'MONTH') {
+      const currentMonth = new Date()
+      return (
+        txDate.getMonth() === currentMonth.getMonth() &&
+        txDate.getFullYear() === currentMonth.getFullYear()
+      )
+    }
+
+    if (filterPeriod === 'YEAR') {
+      const currentYear = new Date()
+      return txDate.getFullYear() === currentYear.getFullYear()
+    }
+
+    return true
+  })
 
   if (isLoading) {
     return (
@@ -105,22 +151,47 @@ export function TransactionList({
         <CardTitle className="flex items-center justify-between">
           <span className="text-base font-bold text-slate-800">Riwayat Transaksi</span>
           <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full select-none">
-            {transactions.length} Transaksi
+            {filteredTransactions.length} Transaksi
           </span>
         </CardTitle>
         <CardDescription className="text-xs text-slate-400">Daftar mutasi pengeluaran & pendapatan Anda</CardDescription>
       </CardHeader>
+
+      {/* HORIZONTAL DATE FILTER BAR */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 px-6 flex-shrink-0 border-b border-slate-50">
+        {([
+          { code: 'ALL', label: 'Semua' },
+          { code: 'TODAY', label: 'Hari Ini' },
+          { code: 'WEEK', label: 'Minggu Ini' },
+          { code: 'MONTH', label: 'Bulan Ini' },
+          { code: 'YEAR', label: 'Tahun Ini' },
+        ] as { code: FilterPeriod; label: string }[]).map((period) => {
+          const isActive = filterPeriod === period.code
+          return (
+            <button
+              key={period.code}
+              onClick={() => setFilterPeriod(period.code)}
+              className={`text-[9px] font-bold px-3 py-1.5 rounded-full select-none cursor-pointer border transition-all duration-200 whitespace-nowrap ${
+                isActive
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-100/50 shadow-sm'
+                  : 'bg-white text-slate-400 border-slate-100 hover:text-slate-705 hover:text-slate-750 hover:bg-slate-50'
+              }`}
+            >
+              {period.label}
+            </button>
+          )
+        })}
+      </div>
       
-      <CardContent className="flex-1 overflow-y-auto px-6 pb-6 pt-0">
-        {transactions.length === 0 ? (
-          <div className="text-center py-12 flex flex-col items-center justify-center h-full">
-            <span className="text-4xl">📦</span>
-            <p className="text-slate-400 text-sm mt-3 font-bold">Belum ada transaksi tercatat</p>
-            <p className="text-slate-400 text-xs mt-1">Gunakan fitur catat atau chat biji kipli!</p>
+      <CardContent className="flex-1 overflow-y-auto px-6 pb-6 pt-3">
+        {filteredTransactions.length === 0 ? (
+          <div className="text-center py-10 flex flex-col items-center justify-center h-full">
+            <span className="text-3xl">📦</span>
+            <p className="text-slate-400 text-xs mt-3 font-bold">Belum ada transaksi di periode ini</p>
           </div>
         ) : (
           <div className="space-y-2.5 pr-0.5">
-            {transactions.map((transaction) => {
+            {filteredTransactions.map((transaction) => {
               const isIncome = transaction.type === 'INCOME'
               return (
                 <div
@@ -128,12 +199,10 @@ export function TransactionList({
                   className="flex items-center justify-between p-3 hover:bg-[#F8F9FD] rounded-2xl transition-all duration-200 border border-slate-50 hover:border-slate-100/50"
                 >
                   <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                    {/* Icon Circle */}
                     <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100/50 flex items-center justify-center text-lg shadow-sm flex-shrink-0">
                       {CATEGORY_ICONS[transaction.category] || '📦'}
                     </div>
                     
-                    {/* Content details */}
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-slate-800 truncate">
                         {transaction.description}
@@ -159,7 +228,6 @@ export function TransactionList({
                     </div>
                   </div>
                   
-                  {/* Amount and edit/delete actions */}
                   <div className="flex items-center gap-2 ml-4">
                     <div
                       className={`text-xs font-bold tracking-tight ${
@@ -170,12 +238,11 @@ export function TransactionList({
                       {formatCurrency(transaction.amount)}
                     </div>
                     
-                    {/* Action buttons */}
                     <div className="flex items-center gap-1">
                       {onUpdate && (
                         <button
                           onClick={() => handleStartEdit(transaction)}
-                          className="p-1.5 text-slate-400 hover:text-indigo-650 hover:text-[#3E6BEC] hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 text-slate-400 hover:text-[#3E6BEC] hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
                           title="Ubah Transaksi"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -217,7 +284,6 @@ export function TransactionList({
             </CardHeader>
             
             <CardContent className="px-6 pb-6 pt-0 space-y-4">
-              {/* Description Input */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deskripsi</label>
                 <input 
@@ -229,7 +295,6 @@ export function TransactionList({
                 />
               </div>
 
-              {/* Amount Input */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nominal (Rp)</label>
                 <input 
@@ -242,7 +307,6 @@ export function TransactionList({
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                {/* Type Selection */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipe</label>
                   <select 
@@ -255,7 +319,6 @@ export function TransactionList({
                   </select>
                 </div>
 
-                {/* Category Selection */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kategori</label>
                   <select 
@@ -270,7 +333,6 @@ export function TransactionList({
                 </div>
               </div>
 
-              {/* Date Input */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tanggal</label>
                 <input 
@@ -282,7 +344,6 @@ export function TransactionList({
                 />
               </div>
 
-              {/* Submit Buttons */}
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={handleSaveEdit}

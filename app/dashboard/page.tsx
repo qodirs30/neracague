@@ -42,28 +42,52 @@ export default function DashboardPage() {
   })
   const [monthlyChartData, setMonthlyChartData] = useState<MonthlyData[]>([])
   const [categoryData, setCategoryData] = useState<CategoryData[]>([])
+  const [achievedMilestones, setAchievedMilestones] = useState<string[]>([])
+
+  // Helper to recalculate goal progress milestones
+  const checkMilestones = (allTxs: Transaction[]) => {
+    const savedGoals = localStorage.getItem('neracague_goals')
+    if (savedGoals) {
+      try {
+        const goals = JSON.parse(savedGoals)
+        const completed: string[] = []
+        for (const g of goals) {
+          const current = allTxs
+            .filter((t) => {
+              const descMatch = t.description?.toLowerCase().includes(g.keyword.toLowerCase())
+              const catMatch = t.category?.toLowerCase().includes(g.keyword.toLowerCase())
+              return descMatch || catMatch
+            })
+            .reduce((sum, t) => sum + t.amount, 0)
+          
+          if (current >= g.targetAmount) {
+            completed.push(g.title)
+          }
+        }
+        setAchievedMilestones(completed)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+  }
 
   // Load data from IndexedDB
   useEffect(() => {
     async function loadData() {
       setIsLoading(true)
       try {
-        // Read profile name
         const savedName = localStorage.getItem('profileName')
         if (savedName) {
           setProfileName(savedName)
         }
 
-        // Get all transactions
         const allTransactions = await getAllTransactions()
         setTransactions(allTransactions.reverse())
 
-        // Get current month stats
         const today = new Date().toISOString().split('T')[0]
         const stats = await getMonthlyStats(today)
         setMonthlyStats(stats)
 
-        // Get category breakdown
         const categories = await getCategoryBreakdown()
         setCategoryData(
           categories.map((cat) => ({
@@ -72,7 +96,6 @@ export default function DashboardPage() {
           }))
         )
 
-        // Generate monthly data for chart (last 6 months)
         let cumulative = 0
         const monthlyData: MonthlyData[] = []
         for (let i = 5; i >= 0; i--) {
@@ -92,6 +115,7 @@ export default function DashboardPage() {
           })
         }
         setMonthlyChartData(monthlyData)
+        checkMilestones(allTransactions)
       } catch (error) {
         console.error('Error loading data:', error)
       } finally {
@@ -106,21 +130,22 @@ export default function DashboardPage() {
   const handleDeleteTransaction = async (id: string) => {
     try {
       await deleteTransaction(id)
-      setTransactions(transactions.filter((t) => t.id !== id))
+      const updatedTxs = transactions.filter((t) => t.id !== id)
+      setTransactions(updatedTxs)
       
-      // Refresh stats
       const today = new Date().toISOString().split('T')[0]
       const stats = await getMonthlyStats(today)
       setMonthlyStats(stats)
 
-      // Refresh category breakdown
       const categories = await getCategoryBreakdown()
       setCategoryData(
-          categories.map((cat) => ({
-            name: cat.category,
-            value: cat.amount,
-          }))
+        categories.map((cat) => ({
+          name: cat.category,
+          value: cat.amount,
+        }))
       )
+
+      checkMilestones(updatedTxs)
     } catch (error) {
       console.error('Error deleting transaction:', error)
     }
@@ -131,7 +156,6 @@ export default function DashboardPage() {
     try {
       await updateTransaction(id, updates)
       
-      // Refresh all lists and data in dashboard
       const allTransactions = await getAllTransactions()
       setTransactions(allTransactions.reverse())
 
@@ -141,10 +165,10 @@ export default function DashboardPage() {
 
       const categories = await getCategoryBreakdown()
       setCategoryData(
-          categories.map((cat) => ({
-            name: cat.category,
-            value: cat.amount,
-          }))
+        categories.map((cat) => ({
+          name: cat.category,
+          value: cat.amount,
+        }))
       )
 
       let cumulative = 0
@@ -166,6 +190,7 @@ export default function DashboardPage() {
         })
       }
       setMonthlyChartData(monthlyData)
+      checkMilestones(allTransactions)
     } catch (error) {
       console.error('Error updating transaction:', error)
     }
@@ -181,6 +206,27 @@ export default function DashboardPage() {
         />
       </div>
 
+      {/* Target Belanja Achievements Banner Notification */}
+      {achievedMilestones.length > 0 && (
+        <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-3xl flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-3 duration-300">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🎉</span>
+            <div>
+              <p className="text-xs font-bold text-emerald-900">Target Belanja Tercapai!</p>
+              <p className="text-[10px] font-semibold text-emerald-700 mt-0.5">
+                Selamat! Kamu telah mencapai target untuk: <span className="font-extrabold text-emerald-900">{achievedMilestones.join(', ')}</span>.
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setAchievedMilestones([])}
+            className="text-emerald-600 hover:text-emerald-800 text-[10px] font-bold px-3 py-1.5 hover:bg-emerald-100/50 rounded-xl transition-all cursor-pointer"
+          >
+            Tutup
+          </button>
+        </div>
+      )}
+
       {/* Bento Grid 4-Column Layout on Desktop */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         
@@ -192,6 +238,7 @@ export default function DashboardPage() {
             income={monthlyStats.income}
             expense={monthlyStats.expense}
             balance={monthlyStats.balance}
+            transactions={transactions}
             isLoading={isLoading}
           />
 
@@ -221,7 +268,7 @@ export default function DashboardPage() {
           
           {/* Overlapping Floating Bubble Chart */}
           <ActivityBubble
-            categoryData={categoryData}
+            transactions={transactions}
             isLoading={isLoading}
           />
 

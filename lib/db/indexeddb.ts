@@ -1,16 +1,23 @@
 import Dexie, { type Table } from 'dexie';
 import type { Transaction, TransactionWithoutId } from '@/types/transaction';
 import type { ChatMessage } from '@/types/chat';
+import type { Debt } from '@/types/debt';
 
 export class NeracagueDB extends Dexie {
   transactions!: Table<Transaction>;
   chatMessages!: Table<ChatMessage>;
+  debts!: Table<Debt>;
 
   constructor() {
     super('neracagueDB');
     this.version(1).stores({
       transactions: '++id, date, type, category, createdAt',
       chatMessages: '++id, createdAt, role',
+    });
+    this.version(2).stores({
+      transactions: '++id, date, type, category, createdAt',
+      chatMessages: '++id, createdAt, role',
+      debts: '++id, dueDate, createdAt',
     });
   }
 }
@@ -178,4 +185,31 @@ export async function getCategoryBreakdown(): Promise<
       percentage: (amount / total) * 100,
     }))
     .sort((a, b) => b.amount - a.amount);
+}
+
+// Debt Operations
+export async function addDebt(
+  debt: Omit<Debt, 'id'>
+): Promise<string> {
+  const id = await db.debts.add({
+    ...debt,
+    id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+  });
+  return id.toString();
+}
+
+export async function getAllDebts(): Promise<Debt[]> {
+  return db.debts.toArray();
+}
+
+export async function updateDebt(
+  id: string,
+  updates: Partial<Debt>
+): Promise<boolean> {
+  const updatedCount = await db.debts.update(id, updates);
+  return updatedCount > 0;
+}
+
+export async function deleteDebt(id: string): Promise<void> {
+  return db.debts.delete(id);
 }

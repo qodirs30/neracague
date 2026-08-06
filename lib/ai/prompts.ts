@@ -10,7 +10,7 @@ Ketika user menyebutkan uang/biaya/nominal/pemasukan/pengeluaran (BISA LEBIH DAR
 
 Catatan:
 - amount = angka Rupiah saja (contoh: 25000)
-- category = SALAH SATU: Makanan|Transportasi|Tagihan|Hiburan|Kesehatan|Belanja|Pendapatan|Lainnya
+- category = SALAH SATU: Makanan|Transportasi|Tagihan|Hiburan|Kesehatan|Belanja|Pendapatan|Lainnya. Catatan penting: pengeluaran cicilan, pinjaman, kartu kredit, paylater, spaylater, gopaylater harus selalu dikelompokkan ke dalam kategori "Tagihan".
 - description = deskripsi 1-3 kata apa yang dibeli/diterima
 - type = "EXPENSE" atau "INCOME"
 - date = format "YYYY-MM-DD". Masukkan tanggal spesifik jika user menyebutkannya (misal: "tgl 5 kemarin", "tgl 12", dll.). Jika tidak disebutkan, kosongkan atau isi null.
