@@ -21,14 +21,14 @@ export function SummaryCards({
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="border border-slate-100 shadow-sm bg-white rounded-2xl">
+          <Card key={i} className="border border-slate-100/80 shadow-sm bg-white rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-semibold text-slate-400 h-4 bg-slate-100 rounded w-20 animate-pulse" />
+              <CardTitle className="h-4 bg-slate-100 rounded w-20 animate-pulse" />
               <div className="h-10 w-10 bg-slate-100 rounded-xl animate-pulse" />
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-4">
               <div className="h-8 bg-slate-100 rounded w-28 animate-pulse" />
-              <div className="h-3 bg-slate-100 rounded w-20 animate-pulse" />
+              <div className="h-12 bg-slate-55/30 rounded-lg animate-pulse" />
             </CardContent>
           </Card>
         ))}
@@ -36,74 +36,112 @@ export function SummaryCards({
     )
   }
 
-  const cards = [
-    {
-      title: 'Total Pemasukan',
-      value: income,
-      icon: TrendingUp,
-      iconColor: 'text-emerald-600',
-      bgColor: 'bg-emerald-50/70 border border-emerald-100/30',
-      borderColor: 'border-t-4 border-t-emerald-500',
-      trendIcon: ArrowUpRight,
-      trendColor: 'text-emerald-600',
-      trendText: 'Uang masuk bulan ini',
-    },
-    {
-      title: 'Total Pengeluaran',
-      value: expense,
-      icon: TrendingDown,
-      iconColor: 'text-rose-600',
-      bgColor: 'bg-rose-50/70 border border-rose-100/30',
-      borderColor: 'border-t-4 border-t-rose-500',
-      trendIcon: ArrowDownRight,
-      trendColor: 'text-rose-600',
-      trendText: 'Uang keluar bulan ini',
-    },
-    {
-      title: 'Sisa Saldo',
-      value: balance,
-      icon: Wallet,
-      iconColor: balance >= 0 ? 'text-indigo-600' : 'text-rose-600',
-      bgColor: balance >= 0 ? 'bg-indigo-50/70 border border-indigo-100/30' : 'bg-rose-50/70 border border-rose-100/30',
-      borderColor: balance >= 0 ? 'border-t-4 border-t-indigo-500' : 'border-t-4 border-t-rose-500',
-      trendIcon: balance >= 0 ? ArrowUpRight : ArrowDownRight,
-      trendColor: balance >= 0 ? 'text-indigo-600' : 'text-rose-600',
-      trendText: balance >= 0 ? 'Kondisi keuangan surplus' : 'Keuangan defisit',
-    },
-  ]
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {cards.map((card) => {
-        const Icon = card.icon
-        const TrendIcon = card.trendIcon
-        return (
-          <Card 
-            key={card.title} 
-            className={`border border-slate-100/80 shadow-sm hover:shadow-md bg-white rounded-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden ${card.borderColor}`}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                {card.title}
-              </CardTitle>
-              <div className={`${card.bgColor} p-2 rounded-xl`}>
-                <Icon className={`w-5 h-5 ${card.iconColor}`} />
-              </div>
-            </CardHeader>
-            <CardContent className="pb-5">
-              <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                {formatCurrency(card.value)}
-              </div>
-              <div className="flex items-center gap-1.5 mt-2.5">
-                <TrendIcon className={`w-4 h-4 ${card.trendColor}`} />
-                <span className="text-xs font-semibold text-slate-500">
-                  {card.trendText}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        )
-      })}
+      {/* 1. BALANCE CARD (Solid Indigo + Mini Bar Chart) */}
+      <Card className="border-0 shadow-md hover:shadow-lg bg-[#3E6BEC] text-white rounded-3xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col justify-between h-48">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-6 px-6">
+          <div>
+            <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Sisa Saldo</p>
+            <h2 className="text-3xl font-extrabold tracking-tight mt-1">
+              {formatCurrency(balance)}
+            </h2>
+          </div>
+          <div className="bg-white/10 p-2.5 rounded-2xl backdrop-blur-sm">
+            <Wallet className="w-5 h-5 text-white" />
+          </div>
+        </CardHeader>
+        <CardContent className="px-6 pb-6 pt-0 mt-auto">
+          {/* Mini Bar Chart */}
+          <div className="flex items-end justify-between h-12 w-full gap-1.5 px-0.5">
+            {[35, 60, 45, 75, 50, 85, 65, 40, 90, 70].map((h, i) => (
+              <div 
+                key={i} 
+                style={{ height: `${h}%` }} 
+                className="w-full bg-white/25 rounded-full hover:bg-white transition-all duration-200"
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 2. INCOME CARD (White + Mini Green Wave) */}
+      <Card className="border border-slate-100 shadow-sm hover:shadow-md bg-white text-slate-800 rounded-3xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col justify-between h-48">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-6 px-6">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pemasukan</p>
+            <h2 className="text-3xl font-extrabold text-slate-950 tracking-tight mt-1">
+              {formatCurrency(income)}
+            </h2>
+          </div>
+          <div className="bg-emerald-50 p-2.5 rounded-2xl border border-emerald-100/30">
+            <TrendingUp className="w-5 h-5 text-emerald-600" />
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 mt-auto">
+          {/* Mini Wave Chart */}
+          <div className="h-14 w-full">
+            <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="incomeMiniGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.25}/>
+                  <stop offset="100%" stopColor="#10b981" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <path 
+                d="M0,25 Q15,10 30,20 T60,5 T90,22 T100,10 L100,30 L0,30 Z" 
+                fill="url(#incomeMiniGrad)"
+              />
+              <path 
+                d="M0,25 Q15,10 30,20 T60,5 T90,22 T100,10" 
+                fill="none" 
+                stroke="#10b981" 
+                strokeWidth={2}
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 3. EXPENSE CARD (White + Mini Red Wave) */}
+      <Card className="border border-slate-100 shadow-sm hover:shadow-md bg-white text-slate-800 rounded-3xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col justify-between h-48">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-6 px-6">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pengeluaran</p>
+            <h2 className="text-3xl font-extrabold text-slate-950 tracking-tight mt-1">
+              {formatCurrency(expense)}
+            </h2>
+          </div>
+          <div className="bg-rose-50 p-2.5 rounded-2xl border border-rose-100/30">
+            <TrendingDown className="w-5 h-5 text-rose-600" />
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 mt-auto">
+          {/* Mini Wave Chart */}
+          <div className="h-14 w-full">
+            <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="expenseMiniGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity={0.25}/>
+                  <stop offset="100%" stopColor="#ef4444" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <path 
+                d="M0,20 Q20,5 40,25 T80,10 T100,22 L100,30 L0,30 Z" 
+                fill="url(#expenseMiniGrad)"
+              />
+              <path 
+                d="M0,20 Q20,5 40,25 T80,10 T100,22" 
+                fill="none" 
+                stroke="#ef4444" 
+                strokeWidth={2}
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

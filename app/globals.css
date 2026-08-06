@@ -170,6 +170,30 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[#F8F9FD] text-foreground;
   }
+}
+
+/* Floating Animations for Dashboard Bubbles */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes float-medium {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+@keyframes float-fast {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+.animate-float-medium {
+  animation: float-medium 4.5s ease-in-out infinite;
+}
+.animate-float-fast {
+  animation: float-fast 3s ease-in-out infinite;
 }
