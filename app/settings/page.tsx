@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Header } from '@/components/layout/header'
@@ -11,6 +11,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 export default function SettingsPage() {
   const router = useRouter()
   const [refreshKey, setRefreshKey] = useState(0)
+  const [profileName, setProfileName] = useState('Sobat Neracague')
+  const [isSaved, setIsSaved] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedName = localStorage.getItem('profileName')
+      if (savedName) {
+        setProfileName(savedName)
+      }
+    }
+  }, [])
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault()
+    localStorage.setItem('profileName', profileName)
+    setIsSaved(true)
+    setTimeout(() => setIsSaved(false), 2000)
+  }
 
   const handleImported = () => {
     // Refresh the page or component as needed
@@ -26,6 +44,34 @@ export default function SettingsPage() {
       <Header title="Pengaturan" subtitle="Kelola data dan preferensi Anda" />
 
       <div className="px-4 py-6 md:px-0 max-w-2xl mx-auto space-y-6">
+        {/* User Profile Card */}
+        <Card className="border border-slate-100 shadow-sm bg-white rounded-3xl overflow-hidden">
+          <CardHeader>
+            <CardTitle className="text-base font-bold text-slate-800">Profil Pengguna</CardTitle>
+            <CardDescription className="text-xs text-slate-400">Atur nama panggilan Anda untuk disapa di dashboard</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Anda</label>
+                <input 
+                  type="text" 
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  placeholder="Masukkan nama Anda..."
+                  required
+                />
+              </div>
+              <button 
+                type="submit"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+              >
+                {isSaved ? '✓ Profil Berhasil Disimpan' : 'Simpan Perubahan'}
+              </button>
+            </form>
+          </CardContent>
+        </Card>
         {/* About Section */}
         <Card>
           <CardHeader className="flex flex-row items-center gap-4">

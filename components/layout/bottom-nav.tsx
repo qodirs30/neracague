@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { TrendingUp, Plus, MessageCircle } from 'lucide-react'
+import { TrendingUp, Plus, MessageCircle, Settings } from 'lucide-react'
 
 export function BottomNav() {
   const pathname = usePathname()
@@ -25,6 +25,12 @@ export function BottomNav() {
       label: 'Chat',
       icon: MessageCircle,
       active: pathname === '/chat',
+    },
+    {
+      href: '/settings',
+      label: 'Pengaturan',
+      icon: Settings,
+      active: pathname === '/settings',
     },
   ]
 

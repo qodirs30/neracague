@@ -78,7 +78,7 @@ export function SummaryCards({
             <TrendingUp className="w-5 h-5 text-emerald-600" />
           </div>
         </CardHeader>
-        <CardContent className="p-0 mt-auto">
+        <CardContent className="px-5 pb-4 pt-0 mt-auto">
           {/* Mini Wave Chart */}
           <div className="h-14 w-full">
             <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">
@@ -117,7 +117,7 @@ export function SummaryCards({
             <TrendingDown className="w-5 h-5 text-rose-600" />
           </div>
         </CardHeader>
-        <CardContent className="p-0 mt-auto">
+        <CardContent className="px-5 pb-4 pt-0 mt-auto">
           {/* Mini Wave Chart */}
           <div className="h-14 w-full">
             <svg className="w-full h-full" viewBox="0 0 100 30" preserveAspectRatio="none">

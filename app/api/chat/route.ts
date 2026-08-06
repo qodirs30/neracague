@@ -59,11 +59,7 @@ async function callGeminiModel(
   messages: Array<{ role: MessageRole; content: string }>,
   userMessage: string
 ): Promise<AiResponsePayload> {
-  const realModelId = modelId === 'gemini-3.6-flash' ? 'gemini-2.0-flash' : 'gemini-1.5-flash';
-  const model = genAI.getGenerativeModel({ 
-    model: realModelId,
-    systemInstruction: SYSTEM_PROMPT,
-  })
+  const model = genAI.getGenerativeModel({ model: modelId })
 
   // Build conversation history
   const conversationHistory = messages.map((msg) => ({

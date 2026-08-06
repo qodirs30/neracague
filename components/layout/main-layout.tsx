@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -12,6 +13,16 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname()
+  const [profileName, setProfileName] = useState('Sobat Neracague')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedName = localStorage.getItem('profileName')
+      if (savedName) {
+        setProfileName(savedName)
+      }
+    }
+  }, [pathname])
 
   const navItems = [
     {
@@ -103,7 +114,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         {/* Top Header (Desktop only) */}
         <div className="hidden md:flex items-center justify-between px-10 py-6 bg-white border-b border-slate-100/50 flex-shrink-0">
           <div>
-            <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">Hi, Sobat Neracague</h1>
+            <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">Hi, {profileName}</h1>
             <p className="text-xs font-semibold text-slate-400 mt-0.5">Berikut adalah ringkasan aktivitas keuangan pribadi Anda.</p>
           </div>
           

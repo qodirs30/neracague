@@ -76,13 +76,16 @@ export function extractTransactionFromUserMessage(
   // Normalize message
   const normalizedMsg = message.toLowerCase();
 
-  // Extract amount (patterns: "25 ribu", "25rb", "25000", "Rp25000", etc.)
+  // Extract amount (patterns: "25 ribu", "25rb", "25000", "Rp25000", "3jt", "3 juta", etc.)
   let amount: number | null = null;
-  const amountMatch = message.match(/(\d+)\s*(ribu|rb|k)?|\bRp[\s]?(\d+)/i);
+  const amountMatch = message.match(/(\d+)\s*(ribu|rb|k|juta|jt)?|\bRp[\s]?(\d+)/i);
   if (amountMatch) {
     let num = parseInt(amountMatch[1] || amountMatch[3]);
-    if (amountMatch[2] && /^(ribu|rb|k)$/i.test(amountMatch[2])) {
+    const suffix = amountMatch[2] ? amountMatch[2].toLowerCase() : '';
+    if (['ribu', 'rb', 'k'].includes(suffix)) {
       num = num * 1000;
+    } else if (['juta', 'jt'].includes(suffix)) {
+      num = num * 1000000;
     }
     amount = num;
   }
