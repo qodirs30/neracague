@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Header } from '@/components/layout/header'
 import { MainLayout } from '@/components/layout/main-layout'
 import { SummaryCards } from '@/components/dashboard/summary-cards'
-import { Charts } from '@/components/dashboard/charts'
+import { Charts, CategoryDonut } from '@/components/dashboard/charts'
 import { TransactionList } from '@/components/dashboard/transaction-list'
 import { 
   getAllTransactions, 
@@ -19,6 +19,8 @@ interface MonthlyData {
   name: string;
   income: number;
   expense: number;
+  balance: number;
+  cumulative: number;
 }
 
 interface CategoryData {
@@ -61,6 +63,7 @@ export default function DashboardPage() {
         )
 
         // Generate monthly data for chart (last 6 months)
+        let cumulative = 0
         const monthlyData: MonthlyData[] = []
         for (let i = 5; i >= 0; i--) {
           const date = new Date()
@@ -68,10 +71,14 @@ export default function DashboardPage() {
           const dateString = date.toISOString().split('T')[0]
 
           const monthStats = await getMonthlyStats(dateString)
+          const net = monthStats.income - monthStats.expense
+          cumulative += net
           monthlyData.push({
             name: formatMonth(dateString),
             income: monthStats.income,
             expense: monthStats.expense,
+            balance: net,
+            cumulative: cumulative,
           })
         }
         setMonthlyChartData(monthlyData)
@@ -125,19 +132,24 @@ export default function DashboardPage() {
           isLoading={isLoading}
         />
 
-        {/* Charts */}
+        {/* Charts (Monthly comparison + Cumulative Trend) */}
         <Charts
           monthlyData={monthlyChartData}
-          categoryData={categoryData}
           isLoading={isLoading}
         />
 
-        {/* Transaction List */}
-        <TransactionList
-          transactions={transactions}
-          onDelete={handleDeleteTransaction}
-          isLoading={isLoading}
-        />
+        {/* Category breakdown and Transaction list side-by-side on desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CategoryDonut
+            categoryData={categoryData}
+            isLoading={isLoading}
+          />
+          <TransactionList
+            transactions={transactions}
+            onDelete={handleDeleteTransaction}
+            isLoading={isLoading}
+          />
+        </div>
       </div>
     </MainLayout>
   )

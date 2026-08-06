@@ -19,8 +19,10 @@ export function MainLayout({ children, sidebar }: MainLayoutProps) {
       {/* Main Content */}
       <div className="flex-1">
         {/* Desktop: 2-column layout */}
-        <div className="hidden md:grid md:grid-cols-3 md:gap-4 md:p-6">
-          <div className="md:col-span-2">{children}</div>
+        <div className="hidden md:grid md:grid-cols-3 md:gap-6 md:p-6">
+          <div className={sidebar ? 'md:col-span-2' : 'md:col-span-3'}>
+            {children}
+          </div>
           {sidebar && (
             <div className="md:col-span-1 sticky top-24 h-fit">
               {sidebar}
