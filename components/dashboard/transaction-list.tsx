@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Trash2, Edit2, X, Check } from 'lucide-react'
@@ -25,7 +25,7 @@ const CATEGORY_ICONS: { [key: string]: string } = {
   Lainnya: '📦',
 }
 
-const CATEGORY_OPTIONS = [
+const DEFAULT_CATEGORY_OPTIONS = [
   'Makanan',
   'Transportasi',
   'Tagihan',
@@ -49,12 +49,33 @@ export function TransactionList({
   // Date filter period state
   const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('ALL')
 
+  // Custom Category States inside Edit Modal
+  const [customCategories, setCustomCategories] = useState<string[]>([])
+  const [showNewCategoryModal, setShowNewCategoryModal] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+
   // Edit form states
   const [editDesc, setEditDesc] = useState('')
   const [editAmount, setEditAmount] = useState<number>(0)
   const [editCategory, setEditCategory] = useState<TransactionCategory>('Makanan')
   const [editType, setEditType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE')
   const [editDate, setEditDate] = useState('')
+
+  // Load custom categories on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('neracague_custom_categories')
+      if (saved) {
+        try {
+          setCustomCategories(JSON.parse(saved))
+        } catch (e) {
+          console.error(e)
+        }
+      }
+    }
+  }, [])
+
+  const allCategories = [...DEFAULT_CATEGORY_OPTIONS, ...customCategories] as TransactionCategory[]
 
   const handleStartEdit = (t: Transaction) => {
     setEditingTransaction(t)
@@ -174,7 +195,7 @@ export function TransactionList({
               className={`text-[9px] font-bold px-3 py-1.5 rounded-full select-none cursor-pointer border transition-all duration-200 whitespace-nowrap ${
                 isActive
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-100/50 shadow-sm'
-                  : 'bg-white text-slate-400 border-slate-100 hover:text-slate-705 hover:text-slate-750 hover:bg-slate-50'
+                  : 'bg-white text-slate-400 border-slate-100 hover:text-slate-700 hover:bg-slate-50'
               }`}
             >
               {period.label}
@@ -218,7 +239,7 @@ export function TransactionList({
                         >
                           {isIncome ? 'Masuk' : 'Keluar'}
                         </Badge>
-                        <span className="text-[10px] font-semibold text-slate-500">
+                        <span className="text-[10px] font-semibold text-slate-505 text-slate-500">
                           {transaction.category}
                         </span>
                         <span className="text-[9px] font-medium text-slate-400">
@@ -323,12 +344,19 @@ export function TransactionList({
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kategori</label>
                   <select 
                     value={editCategory} 
-                    onChange={(e) => setEditCategory(e.target.value as TransactionCategory)}
+                    onChange={(e) => {
+                      if (e.target.value === 'ADD_NEW_CATEGORY') {
+                        setShowNewCategoryModal(true)
+                      } else {
+                        setEditCategory(e.target.value as TransactionCategory)
+                      }
+                    }}
                     className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none"
                   >
-                    {CATEGORY_OPTIONS.map((opt) => (
+                    {allCategories.map((opt) => (
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
+                    <option value="ADD_NEW_CATEGORY" className="text-emerald-600 font-bold bg-emerald-50">+ Tambah Kategori Baru</option>
                   </select>
                 </div>
               </div>
@@ -356,6 +384,74 @@ export function TransactionList({
                   className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
                   <X className="w-4 h-4 stroke-[2.5]" /> Batal
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* EDIT MODAL POPUP: ADD CUSTOM CATEGORY */}
+      {showNewCategoryModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <Card className="w-full max-w-sm bg-white border border-slate-100 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 pt-6 px-6">
+              <div>
+                <CardTitle className="text-base font-bold text-slate-800">Kategori Baru</CardTitle>
+                <CardDescription className="text-xs text-slate-400 font-semibold">Tambahkan kategori transaksi kustom</CardDescription>
+              </div>
+              <button 
+                type="button"
+                onClick={() => {
+                  setShowNewCategoryModal(false)
+                  setNewCategoryName('')
+                }}
+                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </CardHeader>
+            <CardContent className="px-6 pb-6 pt-0 space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nama Kategori</label>
+                <input 
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="e.g. Investasi, Pendidikan, Pulsa"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nameTrimmed = newCategoryName.trim()
+                    if (!nameTrimmed) return
+                    const formatted = nameTrimmed.charAt(0).toUpperCase() + nameTrimmed.slice(1)
+                    if (!allCategories.includes(formatted as TransactionCategory)) {
+                      const updated = [...customCategories, formatted]
+                      setCustomCategories(updated)
+                      localStorage.setItem('neracague_custom_categories', JSON.stringify(updated))
+                    }
+                    setEditCategory(formatted as TransactionCategory)
+                    setShowNewCategoryModal(false)
+                    setNewCategoryName('')
+                  }}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  Tambah
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNewCategoryModal(false)
+                    setNewCategoryName('')
+                  }}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  Batal
                 </button>
               </div>
             </CardContent>

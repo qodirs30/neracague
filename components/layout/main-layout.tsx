@@ -28,11 +28,25 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [notifications, setNotifications] = useState<string[]>([])
   const [hasUnread, setHasUnread] = useState(true)
 
+  // PWA Prompt State
+  const [showPwaPrompt, setShowPwaPrompt] = useState(false)
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedName = localStorage.getItem('profileName')
       if (savedName) {
         setProfileName(savedName)
+      }
+
+      // Detect if PWA prompt should show
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone
+      const isDismissed = localStorage.getItem('neracague_pwa_dismissed') === 'true'
+
+      if (isMobile && !isStandalone && !isDismissed) {
+        // Show after 3 seconds delay for smoother UX
+        const timer = setTimeout(() => setShowPwaPrompt(true), 3000)
+        return () => clearTimeout(timer)
       }
     }
   }, [pathname])
@@ -313,6 +327,46 @@ export function MainLayout({ children }: MainLayoutProps) {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* PWA INSTALLATION PROMPT BOTTOM SHEET */}
+      {showPwaPrompt && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[92%] max-w-sm bg-slate-900 text-white rounded-3xl p-5 shadow-2xl z-[99999] border border-slate-800 flex flex-col gap-3 animate-in slide-in-from-bottom-10 duration-500">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">📲</span>
+              <h4 className="text-xs font-bold tracking-tight text-slate-100">Pasang Neracague</h4>
+            </div>
+            <button 
+              onClick={() => setShowPwaPrompt(false)}
+              className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg cursor-pointer"
+            >
+              <X className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </div>
+          <p className="text-[10px] font-semibold text-slate-300 leading-normal">
+            Dapatkan notifikasi real-time & update terbaru di layar HP kamu:
+          </p>
+          <div className="space-y-1.5 p-3 bg-slate-850 bg-slate-800/40 rounded-2xl border border-slate-800 text-[10px] font-bold text-slate-200">
+            <div className="flex items-center gap-2">
+              <span className="flex-shrink-0 bg-slate-800 w-5 h-5 rounded-full flex items-center justify-center text-[10px]">1</span>
+              <span>Klik tombol **Bagikan** (Share 📤) di bilah browser.</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex-shrink-0 bg-slate-800 w-5 h-5 rounded-full flex items-center justify-center text-[10px]">2</span>
+              <span>Pilih **&quot;Tambah ke Layar Utama&quot;** (➕).</span>
+            </div>
+          </div>
+          <button 
+            onClick={() => {
+              localStorage.setItem('neracague_pwa_dismissed', 'true')
+              setShowPwaPrompt(false)
+            }}
+            className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-[9px] font-bold py-2.5 rounded-xl border border-slate-700/50 cursor-pointer"
+          >
+            Jangan Tampilkan Lagi
+          </button>
         </div>
       )}
 

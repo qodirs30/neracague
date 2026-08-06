@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { formatCurrency } from '@/lib/utils-extended'
+import { formatCurrency, getCategoryColor } from '@/lib/utils-extended'
 import type { Transaction } from '@/types/transaction'
 
 interface ActivityBubbleProps {
@@ -97,7 +97,7 @@ export function ActivityBubble({ transactions = [], isLoading }: ActivityBubbleP
       <CardHeader className="pb-1 pt-6 px-6 relative z-10 bg-white/80 backdrop-blur-sm">
         <CardTitle className="text-base font-bold text-slate-800">Aktivitas Neraca (Bubbles)</CardTitle>
         <CardDescription className="text-[10px] text-slate-400">
-          Gelembung hijau (Pemasukan) & merah (Pengeluaran), besar gelembung sesuai rasio.
+          Warna gelembung diselaraskan dengan alokasi dana dan kategori neraca.
         </CardDescription>
       </CardHeader>
       
@@ -108,22 +108,18 @@ export function ActivityBubble({ transactions = [], isLoading }: ActivityBubbleP
           
           // Calculate diameter: 58px to 105px range
           const size = 58 + (b.amount / maxAmount) * 47
-
-          const isIncome = b.type === 'INCOME'
+          const bubbleColor = getCategoryColor(b.name)
           
           return (
             <div 
               key={idx}
-              className={`absolute rounded-full flex flex-col items-center justify-center p-2 text-center shadow-lg transition-transform duration-300 hover:scale-110 select-none border cursor-default z-10 ${coord.anim === 'float-1' ? 'anim-float-1' : coord.anim === 'float-2' ? 'anim-float-2' : coord.anim === 'float-3' ? 'anim-float-3' : 'anim-float-4'} ${
-                isIncome 
-                  ? 'bg-emerald-500 text-white border-emerald-400/20 shadow-emerald-500/15' 
-                  : 'bg-rose-500 text-white border-rose-400/20 shadow-rose-500/15'
-              }`}
+              className={`absolute rounded-full flex flex-col items-center justify-center p-2 text-center shadow-lg transition-transform duration-300 hover:scale-110 select-none border border-white/20 text-white cursor-default z-10 ${coord.anim === 'float-1' ? 'anim-float-1' : coord.anim === 'float-2' ? 'anim-float-2' : coord.anim === 'float-3' ? 'anim-float-3' : 'anim-float-4'}`}
               style={{
                 width: `${size}px`,
                 height: `${size}px`,
                 left: coord.left,
                 top: coord.top,
+                backgroundColor: bubbleColor,
               }}
             >
               <span className="text-[8px] font-bold opacity-85 uppercase tracking-wider truncate max-w-full">

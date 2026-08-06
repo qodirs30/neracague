@@ -1,20 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Header } from '@/components/layout/header'
 import { MainLayout } from '@/components/layout/main-layout'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select } from '@/components/ui/select'
 import { addTransaction } from '@/lib/db/indexeddb'
 import { getToday } from '@/lib/utils-extended'
-import { Camera, RefreshCw } from 'lucide-react'
+import { Camera, RefreshCw, X } from 'lucide-react'
 import type { TransactionType, TransactionCategory } from '@/types/transaction'
 
-const CATEGORIES: TransactionCategory[] = [
+const DEFAULT_CATEGORIES: TransactionCategory[] = [
   'Makanan',
   'Transportasi',
   'Tagihan',
@@ -34,6 +34,11 @@ export default function AddTransactionPage() {
   const [isScanning, setIsScanning] = useState(false)
   const [scanSuccess, setScanSuccess] = useState<string | null>(null)
 
+  // Custom Categories States
+  const [customCategories, setCustomCategories] = useState<string[]>([])
+  const [showNewCategoryModal, setShowNewCategoryModal] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+
   const [formData, setFormData] = useState({
     type: 'EXPENSE' as TransactionType,
     amount: '',
@@ -42,14 +47,61 @@ export default function AddTransactionPage() {
     date: getToday(),
   })
 
+  // Load custom categories from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('neracague_custom_categories')
+      if (saved) {
+        try {
+          setCustomCategories(JSON.parse(saved))
+        } catch (e) {
+          console.error(e)
+        }
+      }
+    }
+  }, [])
+
+  const allCategories = [...DEFAULT_CATEGORIES, ...customCategories] as TransactionCategory[]
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target
+    if (name === 'category' && value === 'ADD_NEW_CATEGORY') {
+      setShowNewCategoryModal(true)
+      return
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }))
+  }
+
+  const handleAddNewCategory = () => {
+    const nameTrimmed = newCategoryName.trim()
+    if (!nameTrimmed) return
+
+    // Capitalize first letter of category for aesthetic uniformity
+    const formattedName = nameTrimmed.charAt(0).toUpperCase() + nameTrimmed.slice(1)
+
+    if (allCategories.includes(formattedName as TransactionCategory)) {
+      setFormData((prev) => ({ ...prev, category: formattedName as TransactionCategory }))
+      setShowNewCategoryModal(false)
+      setNewCategoryName('')
+      return
+    }
+
+    const updated = [...customCategories, formattedName]
+    setCustomCategories(updated)
+    localStorage.setItem('neracague_custom_categories', JSON.stringify(updated))
+
+    setFormData((prev) => ({
+      ...prev,
+      category: formattedName as TransactionCategory,
+    }))
+
+    setShowNewCategoryModal(false)
+    setNewCategoryName('')
   }
 
   // Simulated OCR receipt scanning
@@ -64,7 +116,6 @@ export default function AddTransactionPage() {
     setTimeout(() => {
       setIsScanning(false)
       
-      // Typical mock receipt items
       const mockAmount = 145000
       const mockCategory = 'Belanja' as TransactionCategory
       const mockDescription = 'Belanja Bulanan Swalayan'
@@ -85,7 +136,6 @@ export default function AddTransactionPage() {
     e.preventDefault()
     setError(null)
 
-    // Validation
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       setError('Jumlah harus lebih dari 0')
       return
@@ -108,7 +158,6 @@ export default function AddTransactionPage() {
         createdAt: Date.now(),
       })
 
-      // Redirect to dashboard
       router.push('/dashboard')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Gagal menyimpan transaksi'
@@ -123,7 +172,7 @@ export default function AddTransactionPage() {
     <MainLayout>
       <Header title="Catat Transaksi Manual" subtitle="Tambahkan data transaksi secara mandiri" />
 
-      {/* Inject Keyframe Animation dynamically */}
+      {/* Inject Laser Scanning Screen Overlay style */}
       <style>{`
         @keyframes scanLaser {
           0%, 100% { top: 0%; }
@@ -141,7 +190,6 @@ export default function AddTransactionPage() {
           {isScanning && (
             <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex flex-col items-center justify-center text-white rounded-3xl overflow-hidden animate-in fade-in duration-200">
               <div className="relative w-36 h-36 border-2 border-emerald-500 rounded-3xl flex items-center justify-center overflow-hidden bg-slate-800/40 shadow-inner">
-                {/* Scanner Laser */}
                 <div className="absolute left-0 right-0 h-1 bg-emerald-400 shadow-[0_0_10px_#34d399] animate-laser z-10" />
                 <Camera className="w-12 h-12 text-emerald-400 opacity-60 animate-pulse" />
               </div>
@@ -227,7 +275,7 @@ export default function AddTransactionPage() {
                 />
               </div>
 
-              {/* Category */}
+              {/* Category Dropdown */}
               <div className="space-y-1.5">
                 <label htmlFor="category" className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Kategori
@@ -239,11 +287,14 @@ export default function AddTransactionPage() {
                   onChange={handleChange}
                   className="rounded-xl border-slate-200 font-semibold text-slate-800"
                 >
-                  {CATEGORIES.map((cat) => (
+                  {allCategories.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}
                     </option>
                   ))}
+                  <option value="ADD_NEW_CATEGORY" className="text-emerald-600 font-bold bg-emerald-50/50">
+                    + Tambah Kategori Baru
+                  </option>
                 </Select>
               </div>
 
@@ -310,6 +361,62 @@ export default function AddTransactionPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* MODAL POPUP: ADD CUSTOM CATEGORY */}
+      {showNewCategoryModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <Card className="w-full max-w-sm bg-white border border-slate-100 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 pt-6 px-6">
+              <div>
+                <CardTitle className="text-base font-bold text-slate-800">Kategori Baru</CardTitle>
+                <CardDescription className="text-xs text-slate-400 font-semibold">Tambahkan kategori transaksi kustom</CardDescription>
+              </div>
+              <button 
+                type="button"
+                onClick={() => {
+                  setShowNewCategoryModal(false)
+                  setNewCategoryName('')
+                }}
+                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </CardHeader>
+            <CardContent className="px-6 pb-6 pt-0 space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nama Kategori</label>
+                <input 
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="e.g., Investasi, Pendidikan, Pulsa"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleAddNewCategory}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  Tambah
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNewCategoryModal(false)
+                    setNewCategoryName('')
+                  }}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </MainLayout>
   )
 }

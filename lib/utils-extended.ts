@@ -149,3 +149,28 @@ export function extractTransactionFromUserMessage(
 
   return results.length > 0 ? results : null;
 }
+
+const CATEGORY_COLORS: { [key: string]: string } = {
+  Makanan: '#3b82f6',       // Blue
+  Transportasi: '#f59e0b',  // Yellow/Amber
+  Tagihan: '#ec4899',       // Pink
+  Hiburan: '#10b981',       // Emerald
+  Kesehatan: '#8b5cf6',     // Violet
+  Belanja: '#f97316',       // Orange
+  Pendapatan: '#22c55e',    // Green
+  Lainnya: '#64748b',       // Slate
+}
+
+export function getCategoryColor(category: string): string {
+  const mapped = CATEGORY_COLORS[category]
+  if (mapped) return mapped
+
+  // Hash-based color mapping for custom categories
+  let hash = 0
+  for (let i = 0; i < category.length; i++) {
+    hash = category.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const colorList = Object.values(CATEGORY_COLORS)
+  const index = Math.abs(hash) % colorList.length
+  return colorList[index]
+}

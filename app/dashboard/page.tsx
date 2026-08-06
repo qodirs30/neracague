@@ -13,7 +13,8 @@ import {
   getMonthlyStats, 
   getCategoryBreakdown,
   deleteTransaction,
-  updateTransaction 
+  updateTransaction,
+  getAllDebts
 } from '@/lib/db/indexeddb'
 import { getMonthStart, getMonthEnd, formatMonth } from '@/lib/utils-extended'
 import type { Transaction } from '@/types/transaction'
@@ -43,8 +44,9 @@ export default function DashboardPage() {
   const [monthlyChartData, setMonthlyChartData] = useState<MonthlyData[]>([])
   const [categoryData, setCategoryData] = useState<CategoryData[]>([])
   const [achievedMilestones, setAchievedMilestones] = useState<string[]>([])
+  const [totalDebt, setTotalDebt] = useState(0)
 
-  // Helper to recalculate goal progress milestones
+  // Helper to recalculate goal progress milestones and debt stats
   const checkMilestones = (allTxs: Transaction[]) => {
     const savedGoals = localStorage.getItem('neracague_goals')
     if (savedGoals) {
@@ -96,6 +98,10 @@ export default function DashboardPage() {
           }))
         )
 
+        const debtsList = await getAllDebts()
+        const sumDebt = debtsList.reduce((acc, d) => acc + d.remainingAmount, 0)
+        setTotalDebt(sumDebt)
+
         let cumulative = 0
         const monthlyData: MonthlyData[] = []
         for (let i = 5; i >= 0; i--) {
@@ -145,6 +151,10 @@ export default function DashboardPage() {
         }))
       )
 
+      const debtsList = await getAllDebts()
+      const sumDebt = debtsList.reduce((acc, d) => acc + d.remainingAmount, 0)
+      setTotalDebt(sumDebt)
+
       checkMilestones(updatedTxs)
     } catch (error) {
       console.error('Error deleting transaction:', error)
@@ -170,6 +180,10 @@ export default function DashboardPage() {
           value: cat.amount,
         }))
       )
+
+      const debtsList = await getAllDebts()
+      const sumDebt = debtsList.reduce((acc, d) => acc + d.remainingAmount, 0)
+      setTotalDebt(sumDebt)
 
       let cumulative = 0
       const monthlyData: MonthlyData[] = []
@@ -238,6 +252,7 @@ export default function DashboardPage() {
             income={monthlyStats.income}
             expense={monthlyStats.expense}
             balance={monthlyStats.balance}
+            totalDebt={totalDebt}
             transactions={transactions}
             isLoading={isLoading}
           />

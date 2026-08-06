@@ -14,7 +14,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { formatCurrency } from '@/lib/utils-extended'
+import { formatCurrency, getCategoryColor } from '@/lib/utils-extended'
 
 interface MonthlyChartData {
   name: string;
@@ -211,7 +211,7 @@ export function CategoryDonut({ categoryData = [], isLoading }: CategoryDonutPro
                   {categoryData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
+                      fill={getCategoryColor(entry.name)}
                       stroke="#ffffff"
                       strokeWidth={2}
                     />
@@ -250,9 +250,9 @@ export function CategoryDonut({ categoryData = [], isLoading }: CategoryDonutPro
         {/* Custom Legend to match design rules */}
         {categoryData.length > 0 && (
           <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 px-2 max-h-[64px] overflow-y-auto">
-            {categoryData.slice(0, 4).map((entry, index) => (
+             {categoryData.slice(0, 4).map((entry, index) => (
               <div key={entry.name} className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
-                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: getCategoryColor(entry.name) }} />
                 <span className="truncate max-w-[90px]">{entry.name}</span>
               </div>
             ))}
