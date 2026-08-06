@@ -203,10 +203,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       <div className="flex-1 flex flex-col min-w-0 relative">
         {/* Top Header (Desktop only) */}
         <div className="hidden md:flex items-center justify-between px-10 py-6 bg-white border-b border-slate-100/50 flex-shrink-0 relative">
-          <div>
-            <h1 className="text-xl font-extrabold text-slate-800 tracking-tight">Hi, {profileName}</h1>
-            <p className="text-xs font-semibold text-slate-400 mt-0.5">Berikut adalah ringkasan aktivitas keuangan pribadi Anda.</p>
-          </div>
+          <div className="flex-1" />
           
           {/* Header Right Actions */}
           <div className="flex items-center gap-4 relative">
@@ -348,14 +345,14 @@ export function MainLayout({ children }: MainLayoutProps) {
           <p className="text-[10px] font-semibold text-slate-300 leading-normal">
             Dapatkan notifikasi real-time & update terbaru di layar HP kamu:
           </p>
-          <div className="space-y-1.5 p-3 bg-slate-850 bg-slate-800/40 rounded-2xl border border-slate-800 text-[10px] font-bold text-slate-200">
+          <div className="space-y-1.5 p-3 bg-slate-800/40 rounded-2xl border border-slate-800 text-[10px] font-bold text-slate-200">
             <div className="flex items-center gap-2">
               <span className="flex-shrink-0 bg-slate-800 w-5 h-5 rounded-full flex items-center justify-center text-[10px]">1</span>
-              <span>Klik tombol **Bagikan** (Share 📤) di bilah browser.</span>
+              <span>Klik tombol <span className="text-emerald-400 font-extrabold">Bagikan</span> (Share 📤) di bilah browser.</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="flex-shrink-0 bg-slate-800 w-5 h-5 rounded-full flex items-center justify-center text-[10px]">2</span>
-              <span>Pilih **&quot;Tambah ke Layar Utama&quot;** (➕).</span>
+              <span>Pilih <span className="text-emerald-400 font-extrabold">&quot;Tambah ke Layar Utama&quot;</span> (➕).</span>
             </div>
           </div>
           <button 

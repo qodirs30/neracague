@@ -212,12 +212,12 @@ export default function DashboardPage() {
 
   return (
     <MainLayout>
-      {/* Mobile-only Header */}
-      <div className="md:hidden mb-6">
-        <Header 
-          title={`Hi, ${profileName}`}
-          subtitle="Berikut adalah ringkasan aktivitas keuangan pribadi Anda."
-        />
+      {/* Greeting Header Box (Desktop & Mobile) */}
+      <div className="mb-6 bg-gradient-to-br from-indigo-50/40 via-white to-slate-50/40 border border-slate-100 rounded-3xl p-5 md:p-6 shadow-sm">
+        <h1 className="text-xl md:text-2xl font-extrabold text-slate-800 tracking-tight">Hi, {profileName}</h1>
+        <p className="text-xs font-semibold text-slate-400 mt-1 md:mt-1.5 leading-normal">
+          Berikut adalah ringkasan aktivitas keuangan pribadi Anda.
+        </p>
       </div>
 
       {/* Target Belanja Achievements Banner Notification */}
