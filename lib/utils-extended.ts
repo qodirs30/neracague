@@ -1,0 +1,130 @@
+export function formatCurrency(amount: number, locale = 'id-ID'): string {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+export function formatDate(date: string | Date, locale = 'id-ID'): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat(locale, {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(d);
+}
+
+export function formatDateShort(date: string | Date, locale = 'id-ID'): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return new Intl.DateTimeFormat(locale, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
+}
+
+export function formatMonth(date: string, locale = 'id-ID'): string {
+  const d = new Date(date);
+  return new Intl.DateTimeFormat(locale, {
+    year: 'numeric',
+    month: 'long',
+  }).format(d);
+}
+
+export function parseDateString(dateString: string): Date {
+  return new Date(dateString);
+}
+
+export function getToday(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+export function getMonthStart(date?: string): string {
+  const d = date ? new Date(date) : new Date();
+  d.setDate(1);
+  return d.toISOString().split('T')[0];
+}
+
+export function getMonthEnd(date?: string): string {
+  const d = date ? new Date(date) : new Date();
+  d.setMonth(d.getMonth() + 1);
+  d.setDate(0);
+  return d.toISOString().split('T')[0];
+}
+
+export function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+export function cn(...classes: (string | undefined | null | false)[]): string {
+  return classes.filter(Boolean).join(' ');
+}
+
+export interface ClientExtractedTransaction {
+  amount: number;
+  category: string;
+  description: string;
+  type: 'INCOME' | 'EXPENSE';
+}
+
+export function extractTransactionFromUserMessage(
+  message: string
+): ClientExtractedTransaction | null {
+  // Normalize message
+  const normalizedMsg = message.toLowerCase();
+
+  // Extract amount (patterns: "25 ribu", "25rb", "25000", "Rp25000", etc.)
+  let amount: number | null = null;
+  const amountMatch = message.match(/(\d+)\s*(ribu|rb|k)?|\bRp[\s]?(\d+)/i);
+  if (amountMatch) {
+    let num = parseInt(amountMatch[1] || amountMatch[3]);
+    if (amountMatch[2] && /^(ribu|rb|k)$/i.test(amountMatch[2])) {
+      num = num * 1000;
+    }
+    amount = num;
+  }
+
+  if (!amount || amount < 100) return null;
+
+  // Detect transaction type: default to EXPENSE, look for income keywords
+  const incomeKeywords = ['dapat', 'terima', 'gaji', 'bonus', 'rejeki', 'bayaran', 'transfer', 'masuk', 'dapat uang'];
+  const isIncome = incomeKeywords.some((keyword) => normalizedMsg.includes(keyword));
+  const type: 'INCOME' | 'EXPENSE' = isIncome ? 'INCOME' : 'EXPENSE';
+
+  // Detect category
+  const categoryRules: [string[], string][] = [
+    [['makan', 'nasi', 'roti', 'ayam', 'ikan', 'warung', 'cafe', 'restoran', 'jajan', 'snack', 'kopi', 'teh', 'mie', 'burger'], 'Makanan'],
+    [['bensin', 'motor', 'mobil', 'taksi', 'ojek', 'angkot', 'kereta', 'bus', 'isi bbm'], 'Transportasi'],
+    [['listrik', 'air', 'internet', 'tagihan', 'cicilan', 'pulsa', 'langganan'], 'Tagihan'],
+    [['film', 'game', 'hiburan', 'konser', 'tiket', 'liburan', 'main', 'nonton'], 'Hiburan'],
+    [['obat', 'dokter', 'rumah sakit', 'kesehatan', 'vitamin', 'apotek'], 'Kesehatan'],
+    [['belanja', 'baju', 'sepatu', 'gadget', 'barang', 'tas', 'buku', 'shopping'], 'Belanja'],
+  ];
+
+  let category = 'Lainnya';
+  for (const [keywords, cat] of categoryRules) {
+    if (keywords.some((kw) => normalizedMsg.includes(kw))) {
+      category = cat;
+      break;
+    }
+  }
+
+  // Extract description
+  let description = message.replace(/(\d+)\s*(ribu|rb|k|Rp)?/i, '').trim();
+  if (description.length > 50) {
+    description = description.substring(0, 50);
+  }
+  if (!description || description.length < 3) {
+    description = category === 'Lainnya' ? 'Transaksi' : category.toLowerCase();
+  }
+
+  return {
+    amount,
+    category,
+    description,
+    type,
+  };
+}
