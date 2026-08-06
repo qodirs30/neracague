@@ -15,7 +15,7 @@ interface RequestBody {
 
 function extractTransactionFromResponse(
   text: string
-): AiExtractedTransaction | undefined {
+): AiExtractedTransaction[] | undefined {
   const transactionMatch = text.match(
     /\[TRANSACTION_EXTRACT\]([\s\S]*?)\[\/TRANSACTION_EXTRACT\]/
   )
@@ -24,22 +24,27 @@ function extractTransactionFromResponse(
 
   try {
     const jsonStr = transactionMatch[1].trim()
-    const transaction = JSON.parse(jsonStr)
+    const parsed = JSON.parse(jsonStr)
+    const list = Array.isArray(parsed) ? parsed : [parsed]
 
-    // Validate transaction structure
-    if (
-      transaction.amount &&
-      transaction.category &&
-      transaction.description &&
-      transaction.type
-    ) {
-      return {
-        amount: Number(transaction.amount),
-        category: transaction.category,
-        description: transaction.description,
-        type: transaction.type,
+    const valid: AiExtractedTransaction[] = []
+    for (const transaction of list) {
+      if (
+        transaction.amount &&
+        transaction.category &&
+        transaction.description &&
+        transaction.type
+      ) {
+        valid.push({
+          amount: Number(transaction.amount),
+          category: transaction.category,
+          description: transaction.description,
+          type: transaction.type,
+          date: transaction.date || undefined,
+        })
       }
     }
+    return valid.length > 0 ? valid : undefined
   } catch (error) {
     console.error('Error parsing transaction:', error)
   }
@@ -82,13 +87,13 @@ async function callGeminiModel(
   const result = await chat.sendMessage(userMessage)
   const responseText = result.response.text()
 
-  // Extract transaction if exists
-  const extractedTransaction = extractTransactionFromResponse(responseText)
+  // Extract transactions if exists
+  const extractedTransactions = extractTransactionFromResponse(responseText)
   const cleanedText = cleanResponseText(responseText)
 
   return {
     text: cleanedText.trim(),
-    transaction: extractedTransaction,
+    transactions: extractedTransactions,
     modelUsed: modelId as 'gemini-3.6-flash' | 'gemini-3.5-flash-lite',
   }
 }

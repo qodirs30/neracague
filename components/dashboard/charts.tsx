@@ -16,13 +16,16 @@ import {
 } from 'recharts'
 import { formatCurrency } from '@/lib/utils-extended'
 
-interface ChartData {
+interface MonthlyChartData {
   name: string;
-  [key: string]: string | number;
+  income: number;
+  expense: number;
+  balance: number;
+  cumulative: number;
 }
 
 interface ChartsProps {
-  monthlyData?: ChartData[];
+  monthlyData?: MonthlyChartData[];
   isLoading?: boolean;
 }
 
@@ -156,8 +159,13 @@ export function Charts({ monthlyData = [], isLoading }: ChartsProps) {
   )
 }
 
+interface CategoryDonutData {
+  name: string;
+  value: number;
+}
+
 interface CategoryDonutProps {
-  categoryData?: ChartData[];
+  categoryData?: CategoryDonutData[];
   isLoading?: boolean;
 }
 

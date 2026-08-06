@@ -12,7 +12,8 @@ import {
   getAllTransactions, 
   getMonthlyStats, 
   getCategoryBreakdown,
-  deleteTransaction 
+  deleteTransaction,
+  updateTransaction 
 } from '@/lib/db/indexeddb'
 import { getMonthStart, getMonthEnd, formatMonth } from '@/lib/utils-extended'
 import type { Transaction } from '@/types/transaction'
@@ -33,6 +34,7 @@ interface CategoryData {
 export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [profileName, setProfileName] = useState('Sobat Neracague')
   const [monthlyStats, setMonthlyStats] = useState({
     income: 0,
     expense: 0,
@@ -46,6 +48,12 @@ export default function DashboardPage() {
     async function loadData() {
       setIsLoading(true)
       try {
+        // Read profile name
+        const savedName = localStorage.getItem('profileName')
+        if (savedName) {
+          setProfileName(savedName)
+        }
+
         // Get all transactions
         const allTransactions = await getAllTransactions()
         setTransactions(allTransactions.reverse())
@@ -118,13 +126,58 @@ export default function DashboardPage() {
     }
   }
 
+  // Handle transaction update
+  const handleUpdateTransaction = async (id: string, updates: Partial<Transaction>) => {
+    try {
+      await updateTransaction(id, updates)
+      
+      // Refresh all lists and data in dashboard
+      const allTransactions = await getAllTransactions()
+      setTransactions(allTransactions.reverse())
+
+      const today = new Date().toISOString().split('T')[0]
+      const stats = await getMonthlyStats(today)
+      setMonthlyStats(stats)
+
+      const categories = await getCategoryBreakdown()
+      setCategoryData(
+          categories.map((cat) => ({
+            name: cat.category,
+            value: cat.amount,
+          }))
+      )
+
+      let cumulative = 0
+      const monthlyData: MonthlyData[] = []
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date()
+        date.setMonth(date.getMonth() - i)
+        const dateString = date.toISOString().split('T')[0]
+
+        const monthStats = await getMonthlyStats(dateString)
+        const net = monthStats.income - monthStats.expense
+        cumulative += net
+        monthlyData.push({
+          name: formatMonth(dateString),
+          income: monthStats.income,
+          expense: monthStats.expense,
+          balance: net,
+          cumulative: cumulative,
+        })
+      }
+      setMonthlyChartData(monthlyData)
+    } catch (error) {
+      console.error('Error updating transaction:', error)
+    }
+  }
+
   return (
     <MainLayout>
       {/* Mobile-only Header */}
       <div className="md:hidden mb-6">
         <Header 
-          title="Dashboard Keuangan"
-          subtitle="Pantau keuangan Anda dengan mudah"
+          title={`Hi, ${profileName}`}
+          subtitle="Berikut adalah ringkasan aktivitas keuangan pribadi Anda."
         />
       </div>
 
@@ -157,6 +210,7 @@ export default function DashboardPage() {
             <TransactionList
               transactions={transactions}
               onDelete={handleDeleteTransaction}
+              onUpdate={handleUpdateTransaction}
               isLoading={isLoading}
             />
           </div>
@@ -173,6 +227,7 @@ export default function DashboardPage() {
 
           {/* Goals Circular Progress List */}
           <GoalsProgress
+            transactions={transactions}
             isLoading={isLoading}
           />
         </div>

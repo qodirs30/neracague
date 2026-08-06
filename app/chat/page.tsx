@@ -80,31 +80,36 @@ export default function ChatPage() {
         data.modelUsed === 'gemini-3.6-flash' ? 'primary' : 'fallback'
       )
 
-      // Handle transaction extraction
-      let extractedTransaction: AiExtractedTransaction | undefined
+      // Handle transaction extraction (can be multiple)
+      let extractedTransactions: AiExtractedTransaction[] = []
 
       // Try to extract from API response first, fallback to client-side extraction
-      let transaction = data.transaction
-      if (!transaction) {
+      let transactionsList = data.transactions
+      if (!transactionsList && data.transaction) {
+        transactionsList = [data.transaction]
+      }
+
+      if (!transactionsList || transactionsList.length === 0) {
         // Fallback: try client-side extraction from user message
         const clientExtracted = extractTransactionFromUserMessage(userMessage)
         if (clientExtracted) {
-          transaction = clientExtracted as AiExtractedTransaction
+          transactionsList = clientExtracted as AiExtractedTransaction[]
         }
       }
 
-      if (transaction) {
-        // Add transaction to IndexedDB
+      if (transactionsList && transactionsList.length > 0) {
         const today = new Date().toISOString().split('T')[0]
-        await addTransaction({
-          amount: transaction.amount,
-          category: transaction.category,
-          description: transaction.description,
-          type: transaction.type,
-          date: today,
-          createdAt: Date.now(),
-        })
-        extractedTransaction = transaction
+        for (const tx of transactionsList) {
+          await addTransaction({
+            amount: tx.amount,
+            category: tx.category,
+            description: tx.description,
+            type: tx.type,
+            date: tx.date || today,
+            createdAt: Date.now(),
+          })
+        }
+        extractedTransactions = transactionsList
       }
 
       // Add assistant message
@@ -114,7 +119,7 @@ export default function ChatPage() {
         role: 'assistant',
         content: data.text,
         createdAt: Date.now(),
-        extractedTransaction,
+        extractedTransactions,
         modelUsed: data.modelUsed,
       }
 
@@ -145,9 +150,13 @@ export default function ChatPage() {
 
   return (
     <MainLayout>
-      <Header title="Chat dengan biji kipli" subtitle="Ceritakan transaksi Anda" />
+      {/* Mobile-only Header */}
+      <div className="md:hidden mb-4">
+        <Header title="Chat dengan biji kipli" subtitle="Ceritakan transaksi Anda" />
+      </div>
 
-      <div className="px-4 py-6 md:px-0 h-[calc(100vh-120px)] md:h-[calc(100vh-200px)]">
+      {/* Social-style Full Viewport height Chat Box container */}
+      <div className="h-[calc(100vh-170px)] sm:h-[calc(100vh-210px)] md:h-[calc(100vh-180px)] max-w-4xl mx-auto flex flex-col bg-white border border-slate-100/80 shadow-sm rounded-3xl overflow-hidden relative">
         <ChatWindow
           messages={messages}
           onSendMessage={handleSendMessage}

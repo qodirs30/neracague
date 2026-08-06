@@ -8,12 +8,14 @@ export interface ChatMessage {
   content: string;
   createdAt: number;
   extractedTransaction?: AiExtractedTransaction;
+  extractedTransactions?: AiExtractedTransaction[];
   modelUsed?: 'gemini-3.6-flash' | 'gemini-3.5-flash-lite';
 }
 
 export interface AiResponsePayload {
   text: string;
   transaction?: AiExtractedTransaction;
+  transactions?: AiExtractedTransaction[];
   modelUsed: 'gemini-3.6-flash' | 'gemini-3.5-flash-lite';
   confidence?: number;
 }

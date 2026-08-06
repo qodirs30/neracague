@@ -68,17 +68,16 @@ export interface ClientExtractedTransaction {
   category: string;
   description: string;
   type: 'INCOME' | 'EXPENSE';
+  date?: string;
 }
 
-export function extractTransactionFromUserMessage(
-  message: string
-): ClientExtractedTransaction | null {
-  // Normalize message
-  const normalizedMsg = message.toLowerCase();
+// Parse a single sentence part for a transaction
+function parseSinglePart(part: string): ClientExtractedTransaction | null {
+  const normalizedMsg = part.toLowerCase();
 
   // Extract amount (patterns: "25 ribu", "25rb", "25000", "Rp25000", "3jt", "3 juta", etc.)
   let amount: number | null = null;
-  const amountMatch = message.match(/(\d+)\s*(ribu|rb|k|juta|jt)?|\bRp[\s]?(\d+)/i);
+  const amountMatch = part.match(/(\d+)\s*(ribu|rb|k|juta|jt)?|\bRp[\s]?(\d+)/i);
   if (amountMatch) {
     let num = parseInt(amountMatch[1] || amountMatch[3]);
     const suffix = amountMatch[2] ? amountMatch[2].toLowerCase() : '';
@@ -93,7 +92,7 @@ export function extractTransactionFromUserMessage(
   if (!amount || amount < 100) return null;
 
   // Detect transaction type: default to EXPENSE, look for income keywords
-  const incomeKeywords = ['dapat', 'terima', 'gaji', 'bonus', 'rejeki', 'bayaran', 'transfer', 'masuk', 'dapat uang'];
+  const incomeKeywords = ['dapat', 'terima', 'gaji', 'bonus', 'rejeki', 'bayaran', 'transfer', 'masuk', 'dapat uang', 'hadiah'];
   const isIncome = incomeKeywords.some((keyword) => normalizedMsg.includes(keyword));
   const type: 'INCOME' | 'EXPENSE' = isIncome ? 'INCOME' : 'EXPENSE';
 
@@ -104,10 +103,10 @@ export function extractTransactionFromUserMessage(
     [['listrik', 'air', 'internet', 'tagihan', 'cicilan', 'pulsa', 'langganan'], 'Tagihan'],
     [['film', 'game', 'hiburan', 'konser', 'tiket', 'liburan', 'main', 'nonton'], 'Hiburan'],
     [['obat', 'dokter', 'rumah sakit', 'kesehatan', 'vitamin', 'apotek'], 'Kesehatan'],
-    [['belanja', 'baju', 'sepatu', 'gadget', 'barang', 'tas', 'buku', 'shopping'], 'Belanja'],
+    [['belanja', 'baju', 'sepatu', 'gadget', 'barang', 'tas', 'buku', 'shopping', 'hadiah'], 'Belanja'],
   ];
 
-  let category = 'Lainnya';
+  let category = isIncome ? 'Pendapatan' : 'Lainnya';
   for (const [keywords, cat] of categoryRules) {
     if (keywords.some((kw) => normalizedMsg.includes(kw))) {
       category = cat;
@@ -116,7 +115,9 @@ export function extractTransactionFromUserMessage(
   }
 
   // Extract description
-  let description = message.replace(/(\d+)\s*(ribu|rb|k|Rp)?/i, '').trim();
+  let description = part.replace(/(\d+)\s*(ribu|rb|k|Rp|juta|jt)?/gi, '').trim();
+  // clean up common noise words
+  description = description.replace(/^(beli|dapat|terima|gaji|hadiah|catat|transaksi)\s+/gi, '');
   if (description.length > 50) {
     description = description.substring(0, 50);
   }
@@ -127,7 +128,24 @@ export function extractTransactionFromUserMessage(
   return {
     amount,
     category,
-    description,
+    description: description.trim(),
     type,
   };
+}
+
+export function extractTransactionFromUserMessage(
+  message: string
+): ClientExtractedTransaction[] | null {
+  // Split message by separators: "dan", "lalu", "trus", commas, or newlines
+  const parts = message.split(/,|\bdan\b|\blalu\b|\btrus\b|\n/i).map((p) => p.trim()).filter(Boolean);
+  const results: ClientExtractedTransaction[] = [];
+
+  for (const part of parts) {
+    const tx = parseSinglePart(part);
+    if (tx) {
+      results.push(tx);
+    }
+  }
+
+  return results.length > 0 ? results : null;
 }

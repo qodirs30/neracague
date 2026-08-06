@@ -1,14 +1,16 @@
 'use client'
 
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Edit2, X, Check } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils-extended'
-import type { Transaction } from '@/types/transaction'
+import type { Transaction, TransactionCategory } from '@/types/transaction'
 
 interface TransactionListProps {
   transactions: Transaction[];
   onDelete?: (id: string) => void;
+  onUpdate?: (id: string, updates: Partial<Transaction>) => void;
   isLoading?: boolean;
 }
 
@@ -23,21 +25,63 @@ const CATEGORY_ICONS: { [key: string]: string } = {
   Lainnya: '📦',
 }
 
+const CATEGORY_OPTIONS = [
+  'Makanan',
+  'Transportasi',
+  'Tagihan',
+  'Hiburan',
+  'Kesehatan',
+  'Belanja',
+  'Pendapatan',
+  'Lainnya',
+]
+
 export function TransactionList({
   transactions,
   onDelete,
+  onUpdate,
   isLoading,
 }: TransactionListProps) {
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
+  
+  // Edit form states
+  const [editDesc, setEditDesc] = useState('')
+  const [editAmount, setEditAmount] = useState<number>(0)
+  const [editCategory, setEditCategory] = useState<TransactionCategory>('Makanan')
+  const [editType, setEditType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE')
+  const [editDate, setEditDate] = useState('')
+
+  const handleStartEdit = (t: Transaction) => {
+    setEditingTransaction(t)
+    setEditDesc(t.description)
+    setEditAmount(t.amount)
+    setEditCategory(t.category)
+    setEditType(t.type)
+    setEditDate(t.date)
+  }
+
+  const handleSaveEdit = () => {
+    if (!editingTransaction || !onUpdate) return
+    onUpdate(editingTransaction.id, {
+      description: editDesc.trim(),
+      amount: Number(editAmount),
+      category: editCategory,
+      type: editType,
+      date: editDate,
+    })
+    setEditingTransaction(null)
+  }
+
   if (isLoading) {
     return (
-      <Card className="border border-slate-100/80 shadow-sm bg-white rounded-2xl">
+      <Card className="border border-slate-100/80 shadow-sm bg-white rounded-3xl h-[380px]">
         <CardHeader>
           <CardTitle className="h-5 bg-slate-100 rounded w-40 animate-pulse" />
           <CardDescription className="h-4 bg-slate-100 rounded w-20 mt-1 animate-pulse" />
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center justify-between p-3 bg-slate-50/50 rounded-xl animate-pulse">
                 <div className="flex items-center gap-3 flex-1">
                   <div className="w-10 h-10 bg-slate-100 rounded-xl" />
@@ -56,31 +100,32 @@ export function TransactionList({
   }
 
   return (
-    <Card className="border border-slate-100/80 shadow-sm bg-white rounded-2xl h-full flex flex-col justify-between">
-      <CardHeader className="pb-3">
+    <Card className="border border-slate-100/80 shadow-sm bg-white rounded-3xl h-[380px] flex flex-col justify-between overflow-hidden">
+      <CardHeader className="pb-2 pt-6 px-6 flex-shrink-0">
         <CardTitle className="flex items-center justify-between">
           <span className="text-base font-bold text-slate-800">Riwayat Transaksi</span>
-          <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+          <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full select-none">
             {transactions.length} Transaksi
           </span>
         </CardTitle>
-        <CardDescription className="text-xs text-slate-500">Daftar mutasi pengeluaran & pendapatan Anda</CardDescription>
+        <CardDescription className="text-xs text-slate-400">Daftar mutasi pengeluaran & pendapatan Anda</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1">
+      
+      <CardContent className="flex-1 overflow-y-auto px-6 pb-6 pt-0">
         {transactions.length === 0 ? (
-          <div className="text-center py-12 flex flex-col items-center justify-center">
+          <div className="text-center py-12 flex flex-col items-center justify-center h-full">
             <span className="text-4xl">📦</span>
-            <p className="text-slate-400 text-sm mt-3 font-semibold">Belum ada transaksi tercatat</p>
+            <p className="text-slate-400 text-sm mt-3 font-bold">Belum ada transaksi tercatat</p>
             <p className="text-slate-400 text-xs mt-1">Gunakan fitur catat atau chat biji kipli!</p>
           </div>
         ) : (
-          <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+          <div className="space-y-2.5 pr-0.5">
             {transactions.map((transaction) => {
               const isIncome = transaction.type === 'INCOME'
               return (
                 <div
                   key={transaction.id}
-                  className="flex items-center justify-between p-3 hover:bg-slate-50/80 rounded-xl transition-all duration-200 border border-transparent hover:border-slate-100"
+                  className="flex items-center justify-between p-3 hover:bg-[#F8F9FD] rounded-2xl transition-all duration-200 border border-slate-50 hover:border-slate-100/50"
                 >
                   <div className="flex items-center gap-3.5 flex-1 min-w-0">
                     {/* Icon Circle */}
@@ -90,13 +135,13 @@ export function TransactionList({
                     
                     {/* Content details */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-800 truncate">
+                      <p className="text-xs font-bold text-slate-800 truncate">
                         {transaction.description}
                       </p>
                       <div className="flex items-center flex-wrap gap-x-2 gap-y-1 mt-1">
                         <Badge
                           variant={isIncome ? 'income' : 'expense'}
-                          className={`text-[10px] font-bold px-1.5 py-0 border-0 ${
+                          className={`text-[9px] font-extrabold px-1.5 py-0 border-0 rounded-md select-none ${
                             isIncome 
                               ? 'bg-emerald-50 text-emerald-700' 
                               : 'bg-rose-50 text-rose-700'
@@ -104,35 +149,48 @@ export function TransactionList({
                         >
                           {isIncome ? 'Masuk' : 'Keluar'}
                         </Badge>
-                        <span className="text-xs font-semibold text-slate-500">
+                        <span className="text-[10px] font-semibold text-slate-500">
                           {transaction.category}
                         </span>
-                        <span className="text-[10px] font-medium text-slate-400">
+                        <span className="text-[9px] font-medium text-slate-400">
                           • {formatDate(transaction.date)}
                         </span>
                       </div>
                     </div>
                   </div>
                   
-                  {/* Amount and delete action */}
-                  <div className="flex items-center gap-3 ml-4">
+                  {/* Amount and edit/delete actions */}
+                  <div className="flex items-center gap-2 ml-4">
                     <div
-                      className={`text-sm font-bold tracking-tight ${
+                      className={`text-xs font-bold tracking-tight ${
                         isIncome ? 'text-emerald-600' : 'text-rose-600'
                       }`}
                     >
                       {isIncome ? '+' : '-'}
                       {formatCurrency(transaction.amount)}
                     </div>
-                    {onDelete && (
-                      <button
-                        onClick={() => onDelete(transaction.id)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all duration-200"
-                        title="Hapus Transaksi"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+                    
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-1">
+                      {onUpdate && (
+                        <button
+                          onClick={() => handleStartEdit(transaction)}
+                          className="p-1.5 text-slate-400 hover:text-indigo-650 hover:text-[#3E6BEC] hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                          title="Ubah Transaksi"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          onClick={() => onDelete(transaction.id)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          title="Hapus Transaksi"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )
@@ -140,6 +198,109 @@ export function TransactionList({
           </div>
         )}
       </CardContent>
+
+      {/* POPUP EDIT TRANSACTION DIALOG */}
+      {editingTransaction && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <Card className="w-full max-w-sm bg-white border border-slate-100 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 pt-6 px-6 flex-shrink-0">
+              <div>
+                <CardTitle className="text-base font-bold text-slate-800">Ubah Transaksi</CardTitle>
+                <CardDescription className="text-xs text-slate-400">Sunting informasi mutasi</CardDescription>
+              </div>
+              <button 
+                onClick={() => setEditingTransaction(null)}
+                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </CardHeader>
+            
+            <CardContent className="px-6 pb-6 pt-0 space-y-4">
+              {/* Description Input */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deskripsi</label>
+                <input 
+                  type="text" 
+                  value={editDesc} 
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white"
+                  required
+                />
+              </div>
+
+              {/* Amount Input */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nominal (Rp)</label>
+                <input 
+                  type="number" 
+                  value={editAmount} 
+                  onChange={(e) => setEditAmount(Number(e.target.value))}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {/* Type Selection */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipe</label>
+                  <select 
+                    value={editType} 
+                    onChange={(e) => setEditType(e.target.value as 'INCOME' | 'EXPENSE')}
+                    className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none"
+                  >
+                    <option value="EXPENSE">Keluar</option>
+                    <option value="INCOME">Masuk</option>
+                  </select>
+                </div>
+
+                {/* Category Selection */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kategori</label>
+                  <select 
+                    value={editCategory} 
+                    onChange={(e) => setEditCategory(e.target.value as TransactionCategory)}
+                    className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none"
+                  >
+                    {CATEGORY_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Date Input */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tanggal</label>
+                <input 
+                  type="date" 
+                  value={editDate} 
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none"
+                  required
+                />
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={handleSaveEdit}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <Check className="w-4 h-4 stroke-[3]" /> Simpan
+                </button>
+                <button
+                  onClick={() => setEditingTransaction(null)}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <X className="w-4 h-4 stroke-[2.5]" /> Batal
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </Card>
   )
 }

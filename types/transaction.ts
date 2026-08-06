@@ -27,4 +27,5 @@ export interface AiExtractedTransaction {
   category: TransactionCategory;
   description: string;
   type: TransactionType;
+  date?: string;
 }

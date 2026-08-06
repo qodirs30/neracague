@@ -59,7 +59,8 @@ export async function updateTransaction(
   id: string,
   updates: Partial<Transaction>
 ): Promise<boolean> {
-  return db.transactions.update(id, updates);
+  const updatedCount = await db.transactions.update(id, updates);
+  return updatedCount > 0;
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
