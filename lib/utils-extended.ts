@@ -75,11 +75,14 @@ export interface ClientExtractedTransaction {
 function parseSinglePart(part: string): ClientExtractedTransaction | null {
   const normalizedMsg = part.toLowerCase();
 
-  // Extract amount (patterns: "25 ribu", "25rb", "25000", "Rp25000", "3jt", "3 juta", etc.)
+  // Extract amount supporting floats and decimals (patterns: "25 ribu", "1.8jt", "25000", "Rp1.6jt", etc.)
   let amount: number | null = null;
-  const amountMatch = part.match(/(\d+)\s*(ribu|rb|k|juta|jt)?|\bRp[\s]?(\d+)/i);
+  const amountMatch = part.match(/(\d+(?:[.,]\d+)?)\s*(ribu|rb|k|juta|jt)?|\bRp[\s]?(\d+(?:[.,]\d+)?)/i);
   if (amountMatch) {
-    let num = parseInt(amountMatch[1] || amountMatch[3]);
+    let numStr = amountMatch[1] || amountMatch[3];
+    // Normalize decimal separator to dot for parseFloat
+    numStr = numStr.replace(',', '.');
+    let num = parseFloat(numStr);
     const suffix = amountMatch[2] ? amountMatch[2].toLowerCase() : '';
     if (['ribu', 'rb', 'k'].includes(suffix)) {
       num = num * 1000;
@@ -136,8 +139,11 @@ function parseSinglePart(part: string): ClientExtractedTransaction | null {
 export function extractTransactionFromUserMessage(
   message: string
 ): ClientExtractedTransaction[] | null {
-  // Split message by separators: "dan", "lalu", "trus", commas, or newlines
-  const parts = message.split(/,|\bdan\b|\blalu\b|\btrus\b|\n/i).map((p) => p.trim()).filter(Boolean);
+  // Replace Indonesian decimal commas with dots first to prevent split on decimals, e.g. "1,8jt" -> "1.8jt"
+  const cleaned = message.replace(/(\d+),(\d+)/g, '$1.$2');
+
+  // Split message by separators: "dan", "lalu", "trus", commas (which are list separators now), or newlines
+  const parts = cleaned.split(/,|\bdan\b|\blalu\b|\btrus\b|\n/i).map((p) => p.trim()).filter(Boolean);
   const results: ClientExtractedTransaction[] = [];
 
   for (const part of parts) {

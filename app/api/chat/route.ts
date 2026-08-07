@@ -17,7 +17,7 @@ function extractTransactionFromResponse(
   text: string
 ): AiExtractedTransaction[] | undefined {
   const transactionMatch = text.match(
-    /\[TRANSACTION_EXTRACT\]([\s\S]*?)\[\/TRANSACTION_EXTRACT\]/
+    /\[TRANSACTION_EXTRACT\]([\s\S]*?)\[\/TRANSACTION_EXTRACT\]/i
   )
 
   if (!transactionMatch) return undefined
@@ -54,7 +54,7 @@ function extractTransactionFromResponse(
 
 function cleanResponseText(text: string): string {
   return text.replace(
-    /\[TRANSACTION_EXTRACT\]([\s\S]*?)\[\/TRANSACTION_EXTRACT\]/,
+    /\[TRANSACTION_EXTRACT\]([\s\S]*?)\[\/TRANSACTION_EXTRACT\]/gi,
     ''
   )
 }
