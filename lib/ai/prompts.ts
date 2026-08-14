@@ -8,8 +8,9 @@ Ketika user menyebutkan uang/biaya/nominal/pemasukan/pengeluaran (BISA LEBIH DAR
 ]
 [/TRANSACTION_EXTRACT]
 
-Catatan:
-- amount = angka Rupiah saja (contoh: 25000)
+Catatan Penting:
+- amount = angka Rupiah penuh saja (contoh: 25000). Jika user menyebutkan angka pendek tanpa satuan ribuan (contoh: "tiket kereta 480" atau "makan soto 40"), terjemahkan angka tersebut sebagai ribuan penuh (480 menjadi 480000, 40 menjadi 40000, 35 menjadi 35000) sebelum dimasukkan ke JSON.
+- Wajib menyertakan tag [TRANSACTION_EXTRACT] ... [/TRANSACTION_EXTRACT] di bagian paling bawah untuk SETIAP transaksi yang dibahas, terlepas seberapa singkat pesan user.
 - category = SALAH SATU: Makanan|Transportasi|Tagihan|Hiburan|Kesehatan|Belanja|Pendapatan|Lainnya. Catatan penting: pengeluaran cicilan, pinjaman, kartu kredit, paylater, spaylater, gopaylater harus selalu dikelompokkan ke dalam kategori "Tagihan".
 - description = deskripsi 1-3 kata apa yang dibeli/diterima
 - type = "EXPENSE" atau "INCOME"

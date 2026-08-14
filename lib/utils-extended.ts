@@ -88,6 +88,11 @@ function parseSinglePart(part: string): ClientExtractedTransaction | null {
       num = num * 1000;
     } else if (['juta', 'jt'].includes(suffix)) {
       num = num * 1000000;
+    } else {
+      // If no suffix and amount is under 1000, interpret as shorthand for thousands (Indonesian standard)
+      if (num > 0 && num < 1000) {
+        num = num * 1000;
+      }
     }
     amount = num;
   }
@@ -142,8 +147,9 @@ export function extractTransactionFromUserMessage(
   // Replace Indonesian decimal commas with dots first to prevent split on decimals, e.g. "1,8jt" -> "1.8jt"
   const cleaned = message.replace(/(\d+),(\d+)/g, '$1.$2');
 
-  // Split message by separators: "dan", "lalu", "trus", commas (which are list separators now), or newlines
-  const parts = cleaned.split(/,|\bdan\b|\blalu\b|\btrus\b|\n/i).map((p) => p.trim()).filter(Boolean);
+  // Split message by separators: "dan", "lalu", "trus", commas, newlines, or space followed by a description and a number
+  // e.g., "tiket kereta 480 makan soto 40 beli bensin 35" -> splits into 3 clauses
+  const parts = cleaned.split(/(?:,|\bdan\b|\blalu\b|\btrus\b|\n|\s+(?=[a-zA-Z]{2,}\s+?\d+))/i).map((p) => p.trim()).filter(Boolean);
   const results: ClientExtractedTransaction[] = [];
 
   for (const part of parts) {
