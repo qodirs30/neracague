@@ -70,6 +70,33 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           </div>
         )}
 
+        {/* 3. Show executed actions info (UPDATE/DELETE) */}
+        {message.actions && message.actions.length > 0 && (
+          <div className={`mt-3 pt-2.5 border-t border-dashed ${isUser ? 'border-white/20' : 'border-slate-100'} space-y-1.5`}>
+            <p className="text-[9px] font-bold uppercase tracking-wider opacity-85">✓ {message.actions.length} Perubahan Diterapkan</p>
+            <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-0.5">
+              {message.actions.map((act, idx) => (
+                <div key={idx} className={`p-2 rounded-xl text-xs flex items-center justify-between gap-2 ${
+                  isUser ? 'bg-white/15' : 'bg-slate-50 border border-slate-100/50'
+                }`}>
+                  <div className="truncate max-w-[120px] sm:max-w-[160px]">
+                    <p className="font-bold truncate">{act.description || 'Transaksi'}</p>
+                    <p className={`text-[9px] font-extrabold uppercase ${act.action === 'UPDATE' ? 'text-amber-600' : 'text-rose-500'}`}>
+                      {act.action === 'UPDATE' ? 'Diperbarui' : 'Dihapus'}
+                    </p>
+                  </div>
+                  {act.action === 'UPDATE' && act.amount !== undefined && (
+                    <span className="font-extrabold text-amber-600 flex-shrink-0">
+                      {act.type === 'INCOME' ? '+' : '-'}
+                      {act.amount.toLocaleString('id-ID')}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Bottom Metadata & Timestamp */}
         <div className="flex items-center justify-between gap-4 mt-2">
           {/* Model indicator */}

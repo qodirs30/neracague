@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { SYSTEM_PROMPT } from '@/lib/ai/prompts'
-import type { AiResponsePayload, MessageRole } from '@/types/chat'
+import type { AiResponsePayload, MessageRole, AiTransactionAction } from '@/types/chat'
 import type { AiExtractedTransaction } from '@/types/transaction'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
@@ -11,6 +11,14 @@ interface RequestBody {
     content: string
   }>
   userMessage: string
+  transactions?: Array<{
+    id: string
+    amount: number
+    category: string
+    description: string
+    type: 'INCOME' | 'EXPENSE'
+    date: string
+  }>
 }
 
 function extractTransactionFromResponse(
@@ -52,6 +60,42 @@ function extractTransactionFromResponse(
   return undefined
 }
 
+function extractActionsFromResponse(
+  text: string
+): AiTransactionAction[] | undefined {
+  const actionMatch = text.match(
+    /\[ACTION_EXTRACT\]([\s\S]*?)\[\/ACTION_EXTRACT\]/i
+  )
+
+  if (!actionMatch) return undefined
+
+  try {
+    const jsonStr = actionMatch[1].trim()
+    const parsed = JSON.parse(jsonStr)
+    const list = Array.isArray(parsed) ? parsed : [parsed]
+
+    const valid: AiTransactionAction[] = []
+    for (const action of list) {
+      if (action.action && action.id) {
+        valid.push({
+          action: action.action,
+          id: action.id,
+          amount: action.amount ? Number(action.amount) : undefined,
+          category: action.category || undefined,
+          description: action.description || undefined,
+          type: action.type || undefined,
+          date: action.date || undefined,
+        })
+      }
+    }
+    return valid.length > 0 ? valid : undefined
+  } catch (error) {
+    console.error('Error parsing actions:', error)
+  }
+
+  return undefined
+}
+
 function cleanResponseText(text: string): string {
   return text.replace(
     /\[TRANSACTION_EXTRACT\]([\s\S]*?)\[\/TRANSACTION_EXTRACT\]/gi,
@@ -59,12 +103,30 @@ function cleanResponseText(text: string): string {
   )
 }
 
+function cleanActionsText(text: string): string {
+  return text.replace(
+    /\[ACTION_EXTRACT\]([\s\S]*?)\[\/ACTION_EXTRACT\]/gi,
+    ''
+  )
+}
+
 async function callGeminiModel(
   modelId: string,
   messages: Array<{ role: MessageRole; content: string }>,
-  userMessage: string
+  userMessage: string,
+  transactions?: any[]
 ): Promise<AiResponsePayload> {
-  const model = genAI.getGenerativeModel({ model: modelId })
+  let systemPrompt = SYSTEM_PROMPT;
+  if (transactions && transactions.length > 0) {
+    const txContext = "\n\nDAFTAR TRANSAKSI SAAT INI (Gunakan ID ini jika user meminta untuk mengedit/hapus):\n" +
+      transactions.map(t => `- ID: "${t.id}" | ${t.date} | ${t.type} | ${t.category} | ${t.description} | Rp ${t.amount}`).join('\n');
+    systemPrompt += txContext;
+  }
+
+  const model = genAI.getGenerativeModel({ 
+    model: modelId,
+    systemInstruction: systemPrompt
+  })
 
   // Build conversation history
   const conversationHistory = messages.map((msg) => ({
@@ -87,13 +149,17 @@ async function callGeminiModel(
   const result = await chat.sendMessage(userMessage)
   const responseText = result.response.text()
 
-  // Extract transactions if exists
+  // Extract transactions & actions if exists
   const extractedTransactions = extractTransactionFromResponse(responseText)
-  const cleanedText = cleanResponseText(responseText)
+  const extractedActions = extractActionsFromResponse(responseText)
+  
+  let cleanedText = cleanResponseText(responseText)
+  cleanedText = cleanActionsText(cleanedText)
 
   return {
     text: cleanedText.trim(),
     transactions: extractedTransactions,
+    actions: extractedActions,
     modelUsed: modelId as 'gemini-3.6-flash' | 'gemini-3.5-flash-lite',
   }
 }
@@ -110,7 +176,7 @@ export async function POST(request: Request) {
     }
 
     const body: RequestBody = await request.json()
-    const { messages, userMessage } = body
+    const { messages, userMessage, transactions } = body
 
     if (!userMessage || typeof userMessage !== 'string') {
       return Response.json(
@@ -125,7 +191,8 @@ export async function POST(request: Request) {
       const response = await callGeminiModel(
         'gemini-3.6-flash',
         messages,
-        userMessage
+        userMessage,
+        transactions
       )
       return Response.json(response)
     } catch (primaryError: unknown) {
@@ -140,7 +207,8 @@ export async function POST(request: Request) {
         const fallbackResponse = await callGeminiModel(
           'gemini-3.5-flash-lite',
           messages,
-          userMessage
+          userMessage,
+          transactions
         )
         return Response.json(fallbackResponse)
       } catch (fallbackError: unknown) {

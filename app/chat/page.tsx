@@ -8,6 +8,9 @@ import {
   addChatMessage,
   getChatMessages,
   addTransaction,
+  getAllTransactions,
+  updateTransaction,
+  deleteTransaction,
 } from '@/lib/db/indexeddb'
 import { generateId, extractTransactionFromUserMessage } from '@/lib/utils-extended'
 import type { ChatMessage, AiResponsePayload } from '@/types/chat'
@@ -55,6 +58,9 @@ export default function ChatPage() {
       setMessages((prev) => [...prev, userChatMessage])
       await addChatMessage(userChatMessage)
 
+      // Fetch all local transactions to provide context to Gemini
+      const localTransactions = await getAllTransactions()
+
       // Send to API
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -65,6 +71,7 @@ export default function ChatPage() {
             content: m.content,
           })),
           userMessage,
+          transactions: localTransactions,
         }),
       })
 
@@ -79,6 +86,31 @@ export default function ChatPage() {
       setModelStatus(
         data.modelUsed === 'gemini-3.6-flash' ? 'primary' : 'fallback'
       )
+
+      // Handle database action updates/deletes if returned
+      if (data.actions && data.actions.length > 0) {
+        for (const act of data.actions) {
+          // Resolve original transaction fields (description/type) for visual display logs
+          const original = localTransactions.find((t) => t.id === act.id)
+          if (original) {
+            act.description = original.description
+            act.type = original.type
+            if (act.category === undefined) act.category = original.category
+          }
+
+          if (act.action === 'UPDATE') {
+            const updates: any = {}
+            if (act.amount !== undefined) updates.amount = act.amount
+            if (act.category !== undefined) updates.category = act.category
+            if (act.description !== undefined) updates.description = act.description
+            if (act.type !== undefined) updates.type = act.type
+            if (act.date !== undefined) updates.date = act.date
+            await updateTransaction(act.id, updates)
+          } else if (act.action === 'DELETE') {
+            await deleteTransaction(act.id)
+          }
+        }
+      }
 
       // Handle transaction extraction (can be multiple)
       let extractedTransactions: AiExtractedTransaction[] = []
@@ -120,6 +152,7 @@ export default function ChatPage() {
         content: data.text,
         createdAt: Date.now(),
         extractedTransactions,
+        actions: data.actions || undefined,
         modelUsed: data.modelUsed,
       }
 
