@@ -93,8 +93,8 @@ export default function ChatPage() {
           // Resolve original transaction fields (description/type) for visual display logs
           const original = localTransactions.find((t) => t.id === act.id)
           if (original) {
-            act.description = original.description
-            act.type = original.type
+            if (act.description === undefined) act.description = original.description
+            if (act.type === undefined) act.type = original.type
             if (act.category === undefined) act.category = original.category
           }
 
