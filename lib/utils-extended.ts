@@ -100,7 +100,11 @@ function parseSinglePart(part: string): ClientExtractedTransaction | null {
   if (!amount || amount < 100) return null;
 
   // Detect transaction type: default to EXPENSE, look for income keywords
-  const incomeKeywords = ['dapat', 'terima', 'gaji', 'bonus', 'rejeki', 'bayaran', 'transfer', 'masuk', 'dapat uang', 'hadiah'];
+  const incomeKeywords = [
+    'dapat', 'terima', 'gaji', 'gajian', 'bonus', 'insentif', 'rejeki', 'rezeki', 'bayaran', 
+    'transfer', 'masuk', 'pemasukan', 'pendapatan', 'dapat uang', 'hadiah', 'cair', 'dividen', 
+    'angpao', 'thr', 'profit', 'untung', 'upah'
+  ];
   const isIncome = incomeKeywords.some((keyword) => normalizedMsg.includes(keyword));
   const type: 'INCOME' | 'EXPENSE' = isIncome ? 'INCOME' : 'EXPENSE';
 
